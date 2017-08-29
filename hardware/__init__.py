@@ -65,6 +65,9 @@ if idn in resources_dict.keys():
     osa = ANDO_AQ6317B(resources_dict[idn])
     print('osa = %s' % idn[:-2])
 
+# TODO
+# Load Newport Optical Power Meter
+from .Newport_1830_C import *
 
 
 # Check for DAQ
