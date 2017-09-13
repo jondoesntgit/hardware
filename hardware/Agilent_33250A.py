@@ -52,6 +52,15 @@ class Agilent_33250A():
         self.inst.write('PHAS %f' % val)
 
     @property
+    def duty_cycle(self):
+        "Returns duty cycle in percentage"
+        return float(self.inst.query('FUNCtion:SQUare:DCYCLe?'))
+
+    @duty_cycle.setter
+    def duty_cycle(self, val):
+        self.inst.write('FUNCtion:SQUare:DCYCLe %f' % val)
+
+    @property
     def waveform(self):
         wf = self.inst.query('FUNC?')[:-1]
         if wf == 'USER':

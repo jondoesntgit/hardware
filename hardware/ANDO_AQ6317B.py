@@ -25,3 +25,6 @@ class ANDO_AQ6317B:
         wavelength = wavelength.astype(np.float)[2:]
 
         return wavelength, power
+
+    # Alias
+    acquire = get_spectrum

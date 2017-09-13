@@ -28,7 +28,7 @@ class NI_9215:
         self.rate = None
         self.max_voltage = None
 
-    def read(self,seconds=1, rate=None, max_voltage=None,timeout=0, verbose=True):
+    def read(self,seconds=1, rate=None, max_voltage=None,timeout=0, verbose=False):
         """
         Return data from the DAQ.
 
@@ -81,9 +81,9 @@ class NI_9215:
             if max_voltage > .001:
                 max_voltage_string = "%2g mV" % (max_voltage * 1e3)
             elif max_voltage > 1e-6:
-                max_voltage_string = "%2g uV" % (max_voltage * 1e-6)
+                max_voltage_string = "%2g uV" % (max_voltage * 1e6)
             elif max_voltage > 1e-9:
-                max_voltage_string = "%2g nV" % (max_voltage * 1e-9)
+                max_voltage_string = "%2g nV" % (max_voltage * 1e9)
             if verbose:
                 print("Auto-setting max_voltage to %s based on "
                 "LIA settings" % max_voltage_string)

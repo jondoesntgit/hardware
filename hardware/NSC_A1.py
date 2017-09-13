@@ -273,6 +273,7 @@ class NSC_A1:
                     sys.stdout.write(
                         "[%-20s] %d%%" % ('=' * int(percent / 5), percent))
         except KeyboardInterrupt:
+            self.inst.close()
             self.cmd('STOP')
             raise KeyboardInterrupt
 

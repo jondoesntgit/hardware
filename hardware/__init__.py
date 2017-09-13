@@ -6,11 +6,11 @@ try:
     from .NSC_A1 import *
     rot = NSC_A1()
     print('rot = %s' % rot.identify())
-    pass
+    print('  Rotation platform angle = %.2f' % rot.angle)
 except:
     print("Couldn't open rotation stage")
 
-print('Rot angle = %.2f' % rot.angle)
+
 
 # see what's on the bus
 rm = visa.ResourceManager()
@@ -65,6 +65,12 @@ if idn in resources_dict.keys():
     osa = ANDO_AQ6317B(resources_dict[idn])
     print('osa = %s' % idn[:-2])
 
+idn = 'Agilent Technologies,DSO1024A,CN50138128,00.04.06\n'
+if idn in resources_dict.keys():
+    from .Agilent_DSO1024A import *
+    osc = Agilent_DSO1024A(resources_dict[idn])
+    print('osc = %s' % idn[:-1])
+
 # TODO
 # Load Newport Optical Power Meter
 from .Newport_1830_C import *
@@ -76,4 +82,4 @@ if True:
     from .NI_9215 import *
     daq = NI_9215()
 
-print(rot.angle)
+from .gyro import *
