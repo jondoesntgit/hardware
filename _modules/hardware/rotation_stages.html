@@ -1,0 +1,463 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hardware.rotation_stages &#8212; Digonnet Hardware 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for hardware.rotation_stages</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Rotation Stages</span>
+<span class="sd">===============</span>
+
+<span class="sd">.. module:: rotation_stages</span>
+<span class="sd">   :platform: Unix, Windows</span>
+<span class="sd">   :synopsis: Hardware wrappers for rotation stages</span>
+
+<span class="sd">.. moduleauthor:: Jonathan Wheeler &lt;jamwheel@stanford.edu&gt;</span>
+
+<span class="sd">This module provides support for controlling rotation stages with Python. A</span>
+<span class="sd">rotation stage can be imported by</span>
+
+<span class="sd">&gt;&gt;&gt; import hardware</span>
+<span class="sd">&gt;&gt;&gt; rot = hardware.rotation_stages.NSC_A1(port=&#39;COM3&#39;)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">serial</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+
+<div class="viewcode-block" id="NSC_A1"><a class="viewcode-back" href="../../modules/rotation_stages.html#hardware.rotation_stages.NSC_A1">[docs]</a><span class="k">class</span> <span class="nc">NSC_A1</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Hardware wrapper for NSC-A1 Single Axis USB Stepper Motor Controller</span>
+
+<span class="sd">    The stepper motor is a USB to Serial interface. On Windows, you</span>
+<span class="sd">    communicate with it over a COM port, where on Unix, you would</span>
+<span class="sd">    communicate over a /dev/tt port.</span>
+
+<span class="sd">    .. _NSC-A1: http://www.newmarksystems.com/motion-controllers/nsc-a1/</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        port (str): The serial port over which to communicate with the</span>
+<span class="sd">            device.</span>
+<span class="sd">        channel (int): Multiple axes can be controlled by the motor</span>
+<span class="sd">        controller. Which channel is this rotational stage talking on?</span>
+<span class="sd">        timeout (float): How many seconds should the serial interface wait</span>
+<span class="sd">            for a response</span>
+<span class="sd">            before timing out?</span>
+<span class="sd">        max_x (int, float): The maximum x (in ticks) to rotate to.</span>
+<span class="sd">            There are 10,000 ticks in one degree. Rotations beyond this</span>
+<span class="sd">            bound will not occur and will raise exceptions</span>
+<span class="sd">        min_x (int, float):</span>
+<span class="sd">            The minimum x (in ticks) to rotate to. There are 10,000 ticks</span>
+<span class="sd">            in one degree.</span>
+<span class="sd">        verbose (bool):</span>
+<span class="sd">            If verbose is ``True``, then a progress bar will show while</span>
+<span class="sd">            the stage is rotating.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        x (int): The absolute position of the rotation stage in ticks</span>
+<span class="sd">        angle (float): The absolute positon of the rotation stage in</span>
+<span class="sd">            degrees</span>
+<span class="sd">        max_x (int): The maximum position the stage can rotate to without</span>
+<span class="sd">            raising an exception.</span>
+<span class="sd">        min_x (int): The minimum posiiton the stage can rotate to without</span>
+<span class="sd">            raising an exception</span>
+<span class="sd">        max_angle (float): The maximum angle the stage can rotate to</span>
+<span class="sd">            without raising an exception</span>
+<span class="sd">        min_angle (float): The minimum angle the stage can rotate to</span>
+<span class="sd">            without raising an exception</span>
+<span class="sd">        velocity (float): The velocity of the stage in degrees per second.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="s1">&#39;COM3&#39;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">max_x</span><span class="o">=</span><span class="mf">30e4</span><span class="p">,</span>
+                 <span class="n">min_x</span><span class="o">=-</span><span class="mf">30e4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel</span> <span class="o">=</span> <span class="n">channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span> <span class="o">=</span> <span class="n">serial</span><span class="o">.</span><span class="n">Serial</span><span class="p">(</span><span class="n">port</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_x</span> <span class="o">=</span> <span class="n">max_x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_x</span> <span class="o">=</span> <span class="n">min_x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_angle</span> <span class="o">=</span> <span class="n">max_x</span> <span class="o">/</span> <span class="mf">1e4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_angle</span> <span class="o">=</span> <span class="n">min_x</span> <span class="o">/</span> <span class="mf">1e4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># not too fast, not too slow</span>
+
+<div class="viewcode-block" id="NSC_A1.cmd"><a class="viewcode-back" href="../../modules/rotation_stages.html#hardware.rotation_stages.NSC_A1.cmd">[docs]</a>    <span class="k">def</span> <span class="nf">cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Send a command to the motor driver over the serial interface</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        command: basestring</span>
+<span class="sd">            The command to send to the motor driver. It is padded with the</span>
+<span class="sd">            channel and carriage return, then converted to bytes, and sent</span>
+<span class="sd">            over the serial interface.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bytearray</span>
+<span class="sd">            The raw response from the serial interface. This can be cast into</span>
+<span class="sd">            numbers or strings depending on the nature of the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">formatted_command</span> <span class="o">=</span> <span class="s2">&quot;@</span><span class="si">{:02d}{}</span><span class="se">\r</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channel</span><span class="p">,</span> <span class="n">command</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">formatted_command</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="n">ret_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">ret_string</span></div>
+
+    <span class="k">def</span> <span class="nf">check_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;An interactive program to check the range of motion of the</span>
+<span class="sd">            rotation platform.</span>
+
+<span class="sd">            The user is prompted for a keyboard interrupt to begin rotation.</span>
+<span class="sd">            The program then runs to the maximum safe rotation angle</span>
+<span class="sd">            ``self.max_angle`` and then to the minimum safe rotation angle</span>
+<span class="sd">            ``self.min_angle``. The user can abort the check at any time by</span>
+<span class="sd">            throwing a keyboard interrupt.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            timeout: int, float</span>
+<span class="sd">                The amount of time to wait for a keyboard interrupt before</span>
+<span class="sd">                beginning. We assume the user knows how to use a keyboard</span>
+<span class="sd">                interrupt, but we check before we rotate the stage.</span>
+
+<span class="sd">            Returns</span>
+<span class="sd">            -------</span>
+<span class="sd">            None</span>
+<span class="sd">                If the program returns None, then it completed the full</span>
+<span class="sd">                rotation without exceptions. If the user throws a keyboard</span>
+<span class="sd">                interrupt during execution, it is because there was a problem.</span>
+
+<span class="sd">            Raises</span>
+<span class="sd">            ------</span>
+<span class="sd">            Exception</span>
+<span class="sd">                If the user does not send a keyboard interrupt during the</span>
+<span class="sd">                initial timeout phase, the program will assume the user got</span>
+<span class="sd">                stuck and didn&#39;t know how to send a keyboard interrupt. This</span>
+<span class="sd">                will raise an ``Exception``</span>
+<span class="sd">            KeyboardInterrupt</span>
+<span class="sd">                After the rotation has started, if the user raises a</span>
+<span class="sd">                ``KeyboardInterrupt`` the rotation stage will stop, and</span>
+<span class="sd">                a KeyboardInterrupt will be raised.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Throw a keyboard interrupt (Ctrl-C) to begin&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">timeout</span><span class="p">):</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Timed out!&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Let&#39;s begin&quot;</span><span class="p">)</span>
+            <span class="k">pass</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Rotating to </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_x</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_x</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Rotating to </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_x</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_x</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;PX&#39;</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">angle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;PX&#39;</span><span class="p">))</span> <span class="o">/</span> <span class="mf">1e4</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_x</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_x</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">min_x</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_x</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_angle</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">min_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_angle</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">velocity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;HSPD&#39;</span><span class="p">))</span> <span class="o">/</span> <span class="mf">1e4</span>
+
+    <span class="nd">@max_x</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">max_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_x</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_angle</span> <span class="o">=</span> <span class="n">val</span> <span class="o">/</span> <span class="mf">1e4</span>
+
+    <span class="nd">@min_x</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">min_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_x</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_angle</span> <span class="o">=</span> <span class="n">val</span> <span class="o">/</span> <span class="mf">1e4</span>
+
+    <span class="nd">@max_angle</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">max_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_x</span> <span class="o">=</span> <span class="n">val</span> <span class="o">*</span> <span class="mf">1e4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_angle</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="nd">@min_angle</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">min_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_x</span> <span class="o">=</span> <span class="n">val</span> <span class="o">*</span> <span class="mf">1e4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_angle</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="nd">@x</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;ticks&quot;</span><span class="p">):</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">ticks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_safe</span><span class="p">(</span><span class="n">ticks</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;ABS&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;X</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ticks</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">wait_until_motor_is_idle</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">ticks</span><span class="p">)</span>
+
+    <span class="nd">@angle</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">angle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">ticks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">&#39;deg&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_safe</span><span class="p">(</span><span class="n">ticks</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;ABS&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;X</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ticks</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">wait_until_motor_is_idle</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">ticks</span><span class="p">)</span>
+
+    <span class="nd">@velocity</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">velocity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Max speed I allow is 10 deg per sec&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;HSPD=</span><span class="si">%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">val</span> <span class="o">*</span> <span class="mf">1e4</span><span class="p">))</span>
+
+<div class="viewcode-block" id="NSC_A1.cw"><a class="viewcode-back" href="../../modules/rotation_stages.html#hardware.rotation_stages.NSC_A1.cw">[docs]</a>    <span class="k">def</span> <span class="nf">cw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">background</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rotate clockwise through a specified angle</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val (float): The amount to rotate</span>
+<span class="sd">            background (bool, optional): If true, the rotation will occur in</span>
+<span class="sd">                the background to allow other commands to happen while the</span>
+<span class="sd">                stage rotates</span>
+<span class="sd">            unit (str, optional): &#39;deg&#39; or &#39;ticks&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_safe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">val</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;INC&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;X</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">background</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait_until_motor_is_idle</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="NSC_A1.ccw"><a class="viewcode-back" href="../../modules/rotation_stages.html#hardware.rotation_stages.NSC_A1.ccw">[docs]</a>    <span class="k">def</span> <span class="nf">ccw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">background</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rotate counter-clockwise through a specified angle</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val (float): The amount to rotate</span>
+<span class="sd">            background (bool, optional): If true, the rotation will occur in</span>
+<span class="sd">                the background to allow other commands to happen while the</span>
+<span class="sd">                stage rotates</span>
+<span class="sd">            unit (str, optional): &#39;deg&#39; or &#39;ticks&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cw</span><span class="p">(</span><span class="o">-</span><span class="n">val</span><span class="p">,</span> <span class="n">background</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NSC_A1.identify"><a class="viewcode-back" href="../../modules/rotation_stages.html#hardware.rotation_stages.NSC_A1.identify">[docs]</a>    <span class="k">def</span> <span class="nf">identify</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: the results of the ``ID`` query.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;ID&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s2">&quot;Serial device on </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NSC_A1.close"><a class="viewcode-back" href="../../modules/rotation_stages.html#hardware.rotation_stages.NSC_A1.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Closes the serial connection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="NSC_A1.disconnect"><a class="viewcode-back" href="../../modules/rotation_stages.html#hardware.rotation_stages.NSC_A1.disconnect">[docs]</a>    <span class="k">def</span> <span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Disconnects the instrument</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_is_safe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destination_in_ticks</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">destination_in_ticks</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_x</span> <span class="ow">or</span>
+                <span class="n">destination_in_ticks</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_x</span><span class="p">):</span>
+            <span class="c1"># return False</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Rotating that far is too dangerous!&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="NSC_A1.get_ticks"><a class="viewcode-back" href="../../modules/rotation_stages.html#hardware.rotation_stages.NSC_A1.get_ticks">[docs]</a>    <span class="k">def</span> <span class="nf">get_ticks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">unit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Converts a rotation distance into ticks.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val (float): The distance to rotate</span>
+<span class="sd">            unit (str): The units, which can be &#39;deg&#39;, &#39;degree&#39;, &#39;degrees&#39;,</span>
+<span class="sd">                &#39;tick&#39;, &#39;ticks&#39;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: The number of ticks</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: Bad unit</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">unit</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;deg&#39;</span><span class="p">,</span> <span class="s1">&#39;degree&#39;</span><span class="p">,</span> <span class="s1">&#39;degrees&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">val</span> <span class="o">*</span> <span class="mf">1e4</span>
+        <span class="k">elif</span> <span class="n">unit</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;tick&#39;</span><span class="p">,</span> <span class="s1">&#39;ticks&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">val</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;I don&#39;t understand your unit </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">unit</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">wait_until_motor_is_idle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;MST&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="ow">and</span> <span class="n">start</span> <span class="ow">and</span> <span class="n">stop</span><span class="p">:</span>
+                        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                            <span class="s2">&quot;</span><span class="se">\r</span><span class="s2">                                          &quot;</span><span class="p">)</span>
+                        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="ow">and</span> <span class="n">start</span> <span class="ow">and</span> <span class="n">stop</span><span class="p">:</span>
+                    <span class="c1"># show progress</span>
+                    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="n">percent</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+                    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                        <span class="s2">&quot;[</span><span class="si">%-20s</span><span class="s2">] </span><span class="si">%d%%</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;=&#39;</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">percent</span> <span class="o">/</span> <span class="mi">5</span><span class="p">),</span> <span class="n">percent</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;STOP&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyboardInterrupt</span>
+
+<div class="viewcode-block" id="NSC_A1.is_constant_speed"><a class="viewcode-back" href="../../modules/rotation_stages.html#hardware.rotation_stages.NSC_A1.is_constant_speed">[docs]</a>    <span class="k">def</span> <span class="nf">is_constant_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">moving</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            moving (bool, optional): Only returns true if the stage is moving</span>
+<span class="sd">               at a constant non-zero speed if true. If false, returns true if</span>
+<span class="sd">               motor is moving constant speed (zero, or non-zero)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: Whether the motor is moving at a constant speed</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;MST&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">moving</span> <span class="ow">and</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="NSC_A1.is_moving"><a class="viewcode-back" href="../../modules/rotation_stages.html#hardware.rotation_stages.NSC_A1.is_moving">[docs]</a>    <span class="k">def</span> <span class="nf">is_moving</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the motor is moving. False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_stationary</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="NSC_A1.is_stationary"><a class="viewcode-back" href="../../modules/rotation_stages.html#hardware.rotation_stages.NSC_A1.is_stationary">[docs]</a>    <span class="k">def</span> <span class="nf">is_stationary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the motor is stationary. False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">(</span><span class="s1">&#39;MST&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/data_acquisition_units.html">Data Acquisition Units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/function_generators.html">Function Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/gyros.html">Fiber Optic Gyroscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/laser_diode_drivers.html">Laser Diode Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/lock_in_amplifiers.html">Lock-in Amplifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/optical_power_meters.html">Optical Power Meters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/oscilloscopes.html">Oscilloscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/rotation_stages.html">Rotation Stages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/spectrum_analyzers.html">Spectrum Analyzers</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Jonathan Wheeler.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

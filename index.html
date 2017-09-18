@@ -1,0 +1,141 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Welcome to Digonnet Hardware’s documentation! &#8212; Digonnet Hardware 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Data Acquisition Units" href="modules/data_acquisition_units.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-digonnet-hardware-s-documentation">
+<h1>Welcome to Digonnet Hardware’s documentation!<a class="headerlink" href="#welcome-to-digonnet-hardware-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>In order for most of these modules to work, you will need to install the following libaries:</p>
+<ul class="simple">
+<li>pyvisa/visa (for most instruments)</li>
+<li>pyserial/serial (for rotation stages)</li>
+<li>pyDAQmx (for NI DAQ units)</li>
+</ul>
+<p>For all of the VISA instruments, the GPIB bus address needs to be passed to
+the class constructor to initialize an object. The bus address can be found
+by a script similar to the following</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">visa</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rm</span> <span class="o">=</span> <span class="n">visa</span><span class="o">.</span><span class="n">ResourceManager</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rm</span><span class="o">.</span><span class="n">list_resources</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Several of the most-used instruments in the lab have already been giving names in the <code class="docutils literal"><span class="pre">__init__.py</span></code> file. These default instruments can be loaded into the
+main script namespace (as well as other scripts) by running</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">hardware</span> <span class="k">import</span> <span class="o">*</span>
+</pre></div>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules/data_acquisition_units.html">Data Acquisition Units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/function_generators.html">Function Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/gyros.html">Fiber Optic Gyroscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/laser_diode_drivers.html">Laser Diode Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/lock_in_amplifiers.html">Lock-in Amplifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/optical_power_meters.html">Optical Power Meters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/oscilloscopes.html">Oscilloscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/rotation_stages.html">Rotation Stages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/spectrum_analyzers.html">Spectrum Analyzers</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="#">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules/data_acquisition_units.html">Data Acquisition Units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/function_generators.html">Function Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/gyros.html">Fiber Optic Gyroscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/laser_diode_drivers.html">Laser Diode Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/lock_in_amplifiers.html">Lock-in Amplifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/optical_power_meters.html">Optical Power Meters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/oscilloscopes.html">Oscilloscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/rotation_stages.html">Rotation Stages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/spectrum_analyzers.html">Spectrum Analyzers</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Jonathan Wheeler.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

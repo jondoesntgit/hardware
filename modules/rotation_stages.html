@@ -1,0 +1,310 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Rotation Stages &#8212; Digonnet Hardware 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Spectrum Analyzers" href="spectrum_analyzers.html" />
+    <link rel="prev" title="Oscilloscopes" href="oscilloscopes.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-hardware.rotation_stages"></span><div class="section" id="module-rotation_stages">
+<span id="rotation-stages"></span><h1>Rotation Stages<a class="headerlink" href="#module-rotation_stages" title="Permalink to this headline">¶</a></h1>
+<p>This module provides support for controlling rotation stages with Python. A
+rotation stage can be imported by</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">hardware</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rot</span> <span class="o">=</span> <span class="n">hardware</span><span class="o">.</span><span class="n">rotation_stages</span><span class="o">.</span><span class="n">NSC_A1</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="s1">&#39;COM3&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="hardware.rotation_stages.NSC_A1">
+<em class="property">class </em><code class="descclassname">hardware.rotation_stages.</code><code class="descname">NSC_A1</code><span class="sig-paren">(</span><em>port=’COM3’</em>, <em>channel=1</em>, <em>timeout=0.1</em>, <em>max_x=300000.0</em>, <em>min_x=-300000.0</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/rotation_stages.html#NSC_A1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.rotation_stages.NSC_A1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hardware wrapper for NSC-A1 Single Axis USB Stepper Motor Controller</p>
+<p>The stepper motor is a USB to Serial interface. On Windows, you
+communicate with it over a COM port, where on Unix, you would
+communicate over a /dev/tt port.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>port</strong> (<em>str</em>) – The serial port over which to communicate with the
+device.</li>
+<li><strong>channel</strong> (<em>int</em>) – Multiple axes can be controlled by the motor</li>
+<li><strong>Which channel is this rotational stage talking on?</strong> (<em>controller.</em>) – </li>
+<li><strong>timeout</strong> (<em>float</em>) – How many seconds should the serial interface wait
+for a response
+before timing out?</li>
+<li><strong>max_x</strong> (<em>int</em><em>, </em><em>float</em>) – The maximum x (in ticks) to rotate to.
+There are 10,000 ticks in one degree. Rotations beyond this
+bound will not occur and will raise exceptions</li>
+<li><strong>min_x</strong> (<em>int</em><em>, </em><em>float</em>) – The minimum x (in ticks) to rotate to. There are 10,000 ticks
+in one degree.</li>
+<li><strong>verbose</strong> (<em>bool</em>) – If verbose is <code class="docutils literal"><span class="pre">True</span></code>, then a progress bar will show while
+the stage is rotating.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x</strong> (<em>int</em>) – The absolute position of the rotation stage in ticks</li>
+<li><strong>angle</strong> (<em>float</em>) – The absolute positon of the rotation stage in
+degrees</li>
+<li><strong>max_x</strong> (<em>int</em>) – The maximum position the stage can rotate to without
+raising an exception.</li>
+<li><strong>min_x</strong> (<em>int</em>) – The minimum posiiton the stage can rotate to without
+raising an exception</li>
+<li><strong>max_angle</strong> (<em>float</em>) – The maximum angle the stage can rotate to
+without raising an exception</li>
+<li><strong>min_angle</strong> (<em>float</em>) – The minimum angle the stage can rotate to
+without raising an exception</li>
+<li><strong>velocity</strong> (<em>float</em>) – The velocity of the stage in degrees per second.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="hardware.rotation_stages.NSC_A1.ccw">
+<code class="descname">ccw</code><span class="sig-paren">(</span><em>val</em>, <em>background=False</em>, <em>unit=’deg’</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/rotation_stages.html#NSC_A1.ccw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.rotation_stages.NSC_A1.ccw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotate counter-clockwise through a specified angle</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>val</strong> (<em>float</em>) – The amount to rotate</li>
+<li><strong>background</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, the rotation will occur in
+the background to allow other commands to happen while the
+stage rotates</li>
+<li><strong>unit</strong> (<em>str</em><em>, </em><em>optional</em>) – ‘deg’ or ‘ticks’.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.rotation_stages.NSC_A1.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/rotation_stages.html#NSC_A1.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.rotation_stages.NSC_A1.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the serial connection</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.rotation_stages.NSC_A1.cmd">
+<code class="descname">cmd</code><span class="sig-paren">(</span><em>command</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/rotation_stages.html#NSC_A1.cmd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.rotation_stages.NSC_A1.cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a command to the motor driver over the serial interface</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>command</strong> (<em>basestring</em>) – The command to send to the motor driver. It is padded with the
+channel and carriage return, then converted to bytes, and sent
+over the serial interface.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><em>bytearray</em> – The raw response from the serial interface. This can be cast into
+numbers or strings depending on the nature of the data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.rotation_stages.NSC_A1.cw">
+<code class="descname">cw</code><span class="sig-paren">(</span><em>val</em>, <em>background=False</em>, <em>unit=’deg’</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/rotation_stages.html#NSC_A1.cw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.rotation_stages.NSC_A1.cw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotate clockwise through a specified angle</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>val</strong> (<em>float</em>) – The amount to rotate</li>
+<li><strong>background</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, the rotation will occur in
+the background to allow other commands to happen while the
+stage rotates</li>
+<li><strong>unit</strong> (<em>str</em><em>, </em><em>optional</em>) – ‘deg’ or ‘ticks’.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.rotation_stages.NSC_A1.disconnect">
+<code class="descname">disconnect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/rotation_stages.html#NSC_A1.disconnect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.rotation_stages.NSC_A1.disconnect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnects the instrument</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.rotation_stages.NSC_A1.get_ticks">
+<code class="descname">get_ticks</code><span class="sig-paren">(</span><em>val</em>, <em>unit</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/rotation_stages.html#NSC_A1.get_ticks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.rotation_stages.NSC_A1.get_ticks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a rotation distance into ticks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>val</strong> (<em>float</em>) – The distance to rotate</li>
+<li><strong>unit</strong> (<em>str</em>) – The units, which can be ‘deg’, ‘degree’, ‘degrees’,
+‘tick’, ‘ticks’</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><em>float</em> – The number of ticks</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> – Bad unit</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.rotation_stages.NSC_A1.identify">
+<code class="descname">identify</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/rotation_stages.html#NSC_A1.identify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.rotation_stages.NSC_A1.identify" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><em>str</em> – the results of the <code class="docutils literal"><span class="pre">ID</span></code> query.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.rotation_stages.NSC_A1.is_constant_speed">
+<code class="descname">is_constant_speed</code><span class="sig-paren">(</span><em>moving=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/rotation_stages.html#NSC_A1.is_constant_speed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.rotation_stages.NSC_A1.is_constant_speed" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>moving</strong> (<em>bool</em><em>, </em><em>optional</em>) – Only returns true if the stage is moving
+at a constant non-zero speed if true. If false, returns true if
+motor is moving constant speed (zero, or non-zero)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><em>bool</em> – Whether the motor is moving at a constant speed</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.rotation_stages.NSC_A1.is_moving">
+<code class="descname">is_moving</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/rotation_stages.html#NSC_A1.is_moving"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.rotation_stages.NSC_A1.is_moving" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><em>bool</em> – True if the motor is moving. False otherwise.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.rotation_stages.NSC_A1.is_stationary">
+<code class="descname">is_stationary</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/rotation_stages.html#NSC_A1.is_stationary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.rotation_stages.NSC_A1.is_stationary" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><em>bool</em> – True if the motor is stationary. False otherwise.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Modules</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="data_acquisition_units.html">Data Acquisition Units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="function_generators.html">Function Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gyros.html">Fiber Optic Gyroscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="laser_diode_drivers.html">Laser Diode Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lock_in_amplifiers.html">Lock-in Amplifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optical_power_meters.html">Optical Power Meters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oscilloscopes.html">Oscilloscopes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Rotation Stages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spectrum_analyzers.html">Spectrum Analyzers</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Jonathan Wheeler.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/modules/rotation_stages.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

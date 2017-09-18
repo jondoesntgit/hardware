@@ -1,0 +1,2 @@
+.. automodule:: hardware.oscilloscopes
+    :members:

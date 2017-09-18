@@ -1,0 +1,198 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hardware.oscilloscopes &#8212; Digonnet Hardware 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for hardware.oscilloscopes</h1><div class="highlight"><pre>
+<span></span><span class="c1"># coding: utf-8</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Oscilloscopes</span>
+<span class="sd">=============</span>
+
+<span class="sd">.. module:: oscilloscopes</span>
+<span class="sd">   :platform: Windows, Linux, OSX</span>
+<span class="sd">   :synopsis: Python wrappers for oscilloscopes</span>
+
+<span class="sd">.. moduleauthor:: Jonathan Wheeler &lt;jamwheel@stanford.edu&gt;</span>
+
+<span class="sd">This module provides support for controlling oscilloscopes with Python.</span>
+<span class="sd">Oscilloscopes can be imported by</span>
+
+<span class="sd">&gt;&gt;&gt; import hardware</span>
+<span class="sd">&gt;&gt;&gt; osc = hardware.function_generators.Agilent_DSO1024A(&#39;USB:...&#39;)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">visa</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">arange</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+
+<div class="viewcode-block" id="Agilent_DSO1024A"><a class="viewcode-back" href="../../modules/oscilloscopes.html#hardware.oscilloscopes.Agilent_DSO1024A">[docs]</a><span class="k">class</span> <span class="nc">Agilent_DSO1024A</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hardware wrapper for Agilent DSO1024A digital oscilloscopes.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        visa_search_term (str): The address that is passed to</span>
+<span class="sd">            ``visa.ResourceManager().open_resource()``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">visa_search_term</span><span class="p">):</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="n">visa</span><span class="o">.</span><span class="n">ResourceManager</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span> <span class="o">=</span> <span class="n">rm</span><span class="o">.</span><span class="n">open_resource</span><span class="p">(</span><span class="n">visa_search_term</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Agilent_DSO1024A.identify"><a class="viewcode-back" href="../../modules/oscilloscopes.html#hardware.oscilloscopes.Agilent_DSO1024A.identify">[docs]</a>    <span class="k">def</span> <span class="nf">identify</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The response of a ``*IDN?`` GPIB query</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;*IDN?&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Agilent_DSO1024A.set_timeout"><a class="viewcode-back" href="../../modules/oscilloscopes.html#hardware.oscilloscopes.Agilent_DSO1024A.set_timeout">[docs]</a>    <span class="k">def</span> <span class="nf">set_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">milliseconds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the instrument timeout in milliseconds</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            milliseconds (float): The amount of time to wait before timing out</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">milliseconds</span></div>
+
+<div class="viewcode-block" id="Agilent_DSO1024A.single"><a class="viewcode-back" href="../../modules/oscilloscopes.html#hardware.oscilloscopes.Agilent_DSO1024A.single">[docs]</a>    <span class="k">def</span> <span class="nf">single</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simulates pressing the `Single` button on the front panel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;:SINGLE&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Agilent_DSO1024A.run"><a class="viewcode-back" href="../../modules/oscilloscopes.html#hardware.oscilloscopes.Agilent_DSO1024A.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simulates pressing the `Run` button on the front panel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;:RUN&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Agilent_DSO1024A.stop"><a class="viewcode-back" href="../../modules/oscilloscopes.html#hardware.oscilloscopes.Agilent_DSO1024A.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simulates pressing the `Stop` button on the front panel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;:STOP&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Agilent_DSO1024A.acquire"><a class="viewcode-back" href="../../modules/oscilloscopes.html#hardware.oscilloscopes.Agilent_DSO1024A.acquire">[docs]</a>    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves a time trace from a single acquisition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            channel (int, optional): The channel to be read</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple of arrays: The first array contains the times in nanoseconds,</span>
+<span class="sd">            and the second contains voltages in volts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;ACQuire:TYPE NORMAL&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;SINGLE&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;WAVeform:SOURce CHAN</span><span class="si">%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">channel</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;WAVeform:FORMat ASCII&#39;</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># yref = float(self.inst.query(&#39;WAVeform:YREF?&#39;))</span>
+        <span class="c1"># yinc = float(self.inst.query(&#39;WAVeform:YINC?&#39;))</span>
+        <span class="c1"># yor = float(self.inst.query(&#39;WAVeform:YOR?&#39;))</span>
+
+        <span class="n">xinc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;WAV:XINC?&#39;</span><span class="p">))</span>
+        <span class="n">xor</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;WAV:XOR?&#39;</span><span class="p">))</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;WAVeform:DATA?&#39;</span><span class="p">)</span>
+        <span class="c1">#  data_values = array([int.from_bytes(val.encode(), &#39;big&#39;)</span>
+        <span class="c1">#   for val in data[12:]])</span>
+        <span class="n">data_values</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">12</span><span class="p">:]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;RUN&#39;</span><span class="p">)</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="n">data_values</span>  <span class="c1"># (yref + data_values) * yinc - yor</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">xor</span> <span class="o">+</span> <span class="p">(</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">))</span> <span class="o">*</span> <span class="n">xinc</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/data_acquisition_units.html">Data Acquisition Units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/function_generators.html">Function Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/gyros.html">Fiber Optic Gyroscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/laser_diode_drivers.html">Laser Diode Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/lock_in_amplifiers.html">Lock-in Amplifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/optical_power_meters.html">Optical Power Meters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/oscilloscopes.html">Oscilloscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/rotation_stages.html">Rotation Stages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/spectrum_analyzers.html">Spectrum Analyzers</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Jonathan Wheeler.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

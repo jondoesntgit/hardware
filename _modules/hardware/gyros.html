@@ -1,0 +1,350 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hardware.gyros &#8212; Digonnet Hardware 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for hardware.gyros</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Fiber Optic Gyroscopes</span>
+<span class="sd">======================</span>
+
+<span class="sd">.. module:: gyros</span>
+<span class="sd">   :platform: Windows, Linux, OSX</span>
+<span class="sd">   :synopsis: Provides support for common operations in characterizing fiber</span>
+<span class="sd">      optic gyroscopes.</span>
+
+<span class="sd">.. moduleauthor:: Jonathan Wheeler &lt;jamwheel@stanford.edu&gt;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">hardware</span> <span class="k">import</span> <span class="n">lia</span><span class="p">,</span> <span class="n">rot</span><span class="p">,</span> <span class="n">daq</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;Could not automatically import lock-in amplifier and rotation</span>
+<span class="s2">    stage. Some functions may not work.</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">allantools</span> <span class="k">import</span> <span class="n">oadev</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">floor</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">pi</span>
+<span class="kn">from</span> <span class="nn">pyfog</span> <span class="k">import</span> <span class="n">Tombstone</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+
+<div class="viewcode-block" id="Gyro"><a class="viewcode-back" href="../../modules/gyros.html#hardware.gyros.Gyro">[docs]</a><span class="k">class</span> <span class="nc">Gyro</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An object which contains functions for automating characterization of</span>
+<span class="sd">    fiber optic gyroscopes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): A filepath to a json file containing properties of</span>
+<span class="sd">            the gyro.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Suppose a json file ``kvothe.json`` contains the following markup </span>
+<span class="sd">        describing a gyro</span>
+<span class="sd">        named `Kvothe`.</span>
+
+<span class="sd">        .. code:: json</span>
+
+<span class="sd">            { // Specs for the Kvothe Gyro</span>
+<span class="sd">                &quot;diameter&quot;: 0.08, // Meters</span>
+<span class="sd">                &quot;length&quot;: 1085, // meters</span>
+<span class="sd">                &quot;pitch&quot;: 37.4 // degrees</span>
+<span class="sd">            }</span>
+
+<span class="sd">        The following code will initialize the gyro objects</span>
+
+<span class="sd">        &gt;&gt;&gt; from hardware import *</span>
+<span class="sd">        &gt;&gt;&gt; gyro = hardware.gyros.Gyro(&#39;kvothe.json&#39;)</span>
+
+<span class="sd">        From here, different tests can be run on the gyro.</span>
+
+<span class="sd">        &gt;&gt;&gt; test1 = gyro.tombstone(hours=4)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="k">as</span> <span class="n">gyro_file</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="c1"># Strip any comments</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">gyro_file</span><span class="p">:</span>
+                <span class="n">string</span> <span class="o">+=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;//.*&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;name&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;length&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;pitch&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pitch</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pitch&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;diameter&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">diameter</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="k">if</span> <span class="s1">&#39;radius&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">diameter</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Gyro.home"><a class="viewcode-back" href="../../modules/gyros.html#hardware.gyros.Gyro.home">[docs]</a>    <span class="k">def</span> <span class="nf">home</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns fiber optic gyroscope to home position. Ideally, the home</span>
+<span class="sd">        position should be calibrated to rotational east or west such that</span>
+<span class="sd">        when the gyro is in this position, it does not detect any component</span>
+<span class="sd">        of the earth rate.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rot</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="Gyro.autophase"><a class="viewcode-back" href="../../modules/gyros.html#hardware.gyros.Gyro.autophase">[docs]</a>    <span class="k">def</span> <span class="nf">autophase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensitivity</span><span class="o">=</span><span class="mf">0.03</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempts to place all of the rotation signal in the X quadrature of the</span>
+<span class="sd">        lock-in amplifier.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sensitivity (float): the sensitivity of the lock in amplifier in</span>
+<span class="sd">                volts</span>
+<span class="sd">            velocity (float): the angular velocity of the rotation stage in</span>
+<span class="sd">                deg/s</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tmp_sensitivity</span> <span class="o">=</span> <span class="n">lia</span><span class="o">.</span><span class="n">sensitivity</span>
+        <span class="n">tmp_velocity</span> <span class="o">=</span> <span class="n">rot</span><span class="o">.</span><span class="n">velocity</span>
+
+        <span class="n">rot</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">velocity</span>
+        <span class="n">lia</span><span class="o">.</span><span class="n">sensitivity</span> <span class="o">=</span> <span class="n">sensitivity</span>
+        <span class="n">start_angle</span> <span class="o">=</span> <span class="n">rot</span><span class="o">.</span><span class="n">angle</span>
+        <span class="n">rot</span><span class="o">.</span><span class="n">ccw</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">background</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">lia</span><span class="o">.</span><span class="n">autophase</span><span class="p">()</span>
+
+        <span class="n">rot</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">tmp_velocity</span>
+        <span class="n">lia</span><span class="o">.</span><span class="n">sensitivity</span> <span class="o">=</span> <span class="n">tmp_sensitivity</span>
+        <span class="n">rot</span><span class="o">.</span><span class="n">wait_until_motor_is_idle</span><span class="p">()</span>
+        <span class="n">rot</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">start_angle</span></div>
+
+<div class="viewcode-block" id="Gyro.get_scale_factor"><a class="viewcode-back" href="../../modules/gyros.html#hardware.gyros.Gyro.get_scale_factor">[docs]</a>    <span class="k">def</span> <span class="nf">get_scale_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensitivity</span><span class="o">=.</span><span class="mi">3</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pitch</span><span class="o">=</span><span class="mf">37.4</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A partial</span>
+<span class="sd">        python port of Jacob Chamoun&#39;s matlab script to grab the scale factor</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sensitivity (float): The sensitivity of the lock-in amplifier</span>
+<span class="sd">            pitch (float): The angle between the gyro normal and the rotation</span>
+<span class="sd">                stage normal</span>
+<span class="sd">            velocity (float): The rotation stage velocity in units of °/s.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: The scale factor :math:`S`.</span>
+
+<span class="sd">            This scale factor converts</span>
+<span class="sd">            between the rotation in degrees</span>
+<span class="sd">            per hour, and the lock-in amplifier output in volts.</span>
+
+<span class="sd">            :math:`\Omega[t] = S \cdot V[t]`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># set sensitivity and store current sensitivity</span>
+        <span class="n">cal_sensitivity</span> <span class="o">=</span> <span class="n">lia</span><span class="o">.</span><span class="n">sensitivity</span>
+        <span class="n">lia</span><span class="o">.</span><span class="n">sensitivity</span> <span class="o">=</span> <span class="n">sensitivity</span>
+
+        <span class="c1"># set the integration time and filter slope and store the current</span>
+        <span class="c1"># integration</span>
+        <span class="n">cal_integration_time</span> <span class="o">=</span> <span class="n">lia</span><span class="o">.</span><span class="n">time_constant</span>
+        <span class="n">lia</span><span class="o">.</span><span class="n">time_constant</span> <span class="o">=</span> <span class="mf">0.01</span>
+
+        <span class="n">cal_velocity</span> <span class="o">=</span> <span class="n">rot</span><span class="o">.</span><span class="n">velocity</span>
+        <span class="n">rot</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">velocity</span>
+
+        <span class="c1"># set the acquisition rate</span>
+        <span class="n">cal_acquisition_rate</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">cal_integration_time</span><span class="p">)</span>
+
+        <span class="c1"># start acquisition and store the calibrated data</span>
+        <span class="n">rot</span><span class="o">.</span><span class="n">ccw</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">background</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ccw_data</span> <span class="o">=</span> <span class="n">daq</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="n">cal_acquisition_rate</span><span class="p">,</span>
+                            <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">rot</span><span class="o">.</span><span class="n">cw</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">background</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">cw_data</span> <span class="o">=</span> <span class="n">daq</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="n">cal_acquisition_rate</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">lia</span><span class="o">.</span><span class="n">time_constant</span> <span class="o">=</span> <span class="n">cal_integration_time</span>
+        <span class="n">lia</span><span class="o">.</span><span class="n">sensitivity</span> <span class="o">=</span> <span class="n">cal_sensitivity</span>
+        <span class="n">rot</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">cal_velocity</span>
+
+        <span class="n">volt_seconds_per_degree</span> <span class="o">=</span> <span class="p">(</span><span class="n">mean</span><span class="p">(</span><span class="n">ccw_data</span><span class="p">)</span> <span class="o">-</span> <span class="n">mean</span><span class="p">(</span><span class="n">cw_data</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span>\
+            <span class="o">/</span> <span class="n">cos</span><span class="p">(</span><span class="n">pitch</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">/</span> <span class="mi">180</span><span class="p">)</span>
+        <span class="n">volt_hours_per_degree</span> <span class="o">=</span> <span class="n">volt_seconds_per_degree</span> <span class="o">/</span> <span class="mi">3600</span>
+        <span class="n">degrees_per_hour_per_volt</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">volt_hours_per_degree</span>
+        <span class="k">return</span> <span class="n">degrees_per_hour_per_volt</span></div>
+
+<div class="viewcode-block" id="Gyro.tombstone"><a class="viewcode-back" href="../../modules/gyros.html#hardware.gyros.Gyro.tombstone">[docs]</a>    <span class="k">def</span> <span class="nf">tombstone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hours</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                  <span class="n">autophase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">autohome</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs a tombstone test of the gyro. The gyro records a time series</span>
+<span class="sd">        of rotation data when no rotation is applied to it. This data can be</span>
+<span class="sd">        used to test the noise and bias stability of the gyroscope.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            seconds (float): The number of seconds</span>
+<span class="sd">            minutes (float): The number of minutes</span>
+<span class="sd">            hours (float): The number of hours</span>
+<span class="sd">            rate (float): The sampling rate</span>
+<span class="sd">            autophase (bool): If true, an autophase routine will be run.</span>
+<span class="sd">            autohome (bool): If true, the gyro will return to the home position</span>
+<span class="sd">                before running the tombstone test.</span>
+<span class="sd">            scale_factor (float): The scale factor to use in order to convert</span>
+<span class="sd">                between lock-in amplifier voltage and rotation rate in units</span>
+<span class="sd">                of deg/h/Volt. If this is not set, the gyro will run the</span>
+<span class="sd">                :func:`hardware.gyros.get_scale_factor` routine.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tombstone: A :class:`pyfog.tombstone.Tombstone` object</span>
+
+<span class="sd">            This object contains all of the data and settings from this run.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">seconds</span><span class="p">:</span>
+            <span class="n">duration</span> <span class="o">+=</span> <span class="n">seconds</span>
+        <span class="k">if</span> <span class="n">minutes</span><span class="p">:</span>
+            <span class="n">duration</span> <span class="o">+=</span> <span class="n">minutes</span> <span class="o">*</span> <span class="mi">60</span>
+        <span class="k">if</span> <span class="n">hours</span><span class="p">:</span>
+            <span class="n">duration</span> <span class="o">+=</span> <span class="n">hours</span> <span class="o">*</span> <span class="mi">3600</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">time</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot test for 0 seconds.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">autohome</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">home</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">autophase</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">autophase</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">scale_factor</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+            <span class="n">scale_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_factor</span>
+
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">scale_factor</span><span class="p">:</span>
+            <span class="n">scale_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scale_factor</span><span class="p">()</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">daq</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">rate</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Tombstone</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="n">scale_factor</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Gyro.get_arw"><a class="viewcode-back" href="../../modules/gyros.html#hardware.gyros.Gyro.get_arw">[docs]</a>    <span class="k">def</span> <span class="nf">get_arw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">autophase</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">autohome</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">scale_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs a tombstone test of the gyro, but rather than returning a</span>
+<span class="sd">        :class:`pyfog.tombstone.Tombstone` object, it returns the ARW in units</span>
+<span class="sd">        of deg/√h. If this is not set, the gyro will run the</span>
+<span class="sd">        :func:`hardware.gyros.get_scale_factor` routine.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            seconds (float): The number of seconds</span>
+<span class="sd">            minutes (float): The number of minutes</span>
+<span class="sd">            hours (float): The number of hours</span>
+<span class="sd">            rate (float): The sample rate</span>
+<span class="sd">            autophse (bool): If true, the gyro will return to the home position</span>
+<span class="sd">                before running the tombstone test.</span>
+<span class="sd">            scale_factor (float): The scale factor to use in order to convert</span>
+<span class="sd">            between lock-in amplifier voltage and rotation rate in units of</span>
+<span class="sd">            °/h/Volt. If this is not set, the gyro will run the</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: The angular random walk in units of °/√h</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">scale_factor</span><span class="p">:</span>
+            <span class="n">scale_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scale_factor</span><span class="p">()</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">daq</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">seconds</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">dev</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">oadev</span><span class="p">(</span><span class="n">data</span><span class="o">*</span><span class="n">scale_factor</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s1">&#39;freq&#39;</span><span class="p">,</span>
+                             <span class="n">taus</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">dev</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">60</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/data_acquisition_units.html">Data Acquisition Units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/function_generators.html">Function Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/gyros.html">Fiber Optic Gyroscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/laser_diode_drivers.html">Laser Diode Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/lock_in_amplifiers.html">Lock-in Amplifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/optical_power_meters.html">Optical Power Meters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/oscilloscopes.html">Oscilloscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/rotation_stages.html">Rotation Stages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/spectrum_analyzers.html">Spectrum Analyzers</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Jonathan Wheeler.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,185 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Lock-in Amplifiers &#8212; Digonnet Hardware 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Optical Power Meters" href="optical_power_meters.html" />
+    <link rel="prev" title="Laser Diode Drivers" href="laser_diode_drivers.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-hardware.lock_in_amplifiers"></span><div class="section" id="module-lock_in_amplifiers">
+<span id="lock-in-amplifiers"></span><h1>Lock-in Amplifiers<a class="headerlink" href="#module-lock_in_amplifiers" title="Permalink to this headline">¶</a></h1>
+<p>This module provides support for controlling lock-in amplifiers with Python.
+Lock-in amplifiers can be imported by</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">hardware</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lia</span> <span class="o">=</span> <span class="n">hardware</span><span class="o">.</span><span class="n">function_generators</span><span class="o">.</span><span class="n">SRS_SR844</span><span class="p">(</span><span class="s1">&#39;GPIB0:...&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="hardware.lock_in_amplifiers.SRS_SR844">
+<em class="property">class </em><code class="descclassname">hardware.lock_in_amplifiers.</code><code class="descname">SRS_SR844</code><span class="sig-paren">(</span><em>visa_search_term</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/lock_in_amplifiers.html#SRS_SR844"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.lock_in_amplifiers.SRS_SR844" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hardware wrapper for Stanford Research Systems SR844 Lock-in Amplifier</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>visa_search_term</strong> (<em>str</em>) – The address that is passed to
+<code class="docutils literal"><span class="pre">visa.ResourceManager().open_resource()</span></code></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>phase</strong> (<em>float</em>) – The phase between the input and the reference signals in
+radians.</li>
+<li><strong>sensitivity</strong> (<em>float</em>) – The sensitivity of the lock-in amplifer in volts.</li>
+<li><strong>time_constant</strong> (<em>float</em>) – The time constant for the lock-in amplifier
+filter.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="hardware.lock_in_amplifiers.SRS_SR844.autogain">
+<code class="descname">autogain</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/lock_in_amplifiers.html#SRS_SR844.autogain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.lock_in_amplifiers.SRS_SR844.autogain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the built-in <code class="docutils literal"><span class="pre">AGAN</span></code> function in order to auto-gain the
+lock-in amplifier.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.lock_in_amplifiers.SRS_SR844.autophase">
+<code class="descname">autophase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/lock_in_amplifiers.html#SRS_SR844.autophase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.lock_in_amplifiers.SRS_SR844.autophase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends the <code class="docutils literal"><span class="pre">APHS</span></code> command to the lock-in over the GPIB bus. This
+performs the Auto Phase function. This command is the same as pressing
+Shift−Phase on the lock-in amplifier front panel. This command adjusts
+the reference phase so that the current measurement has a Y value of
+zero and an X value equal to the signal magnitude, R.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.lock_in_amplifiers.SRS_SR844.get_status">
+<code class="descname">get_status</code><span class="sig-paren">(</span><em>status=None</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/lock_in_amplifiers.html#SRS_SR844.get_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.lock_in_amplifiers.SRS_SR844.get_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the status bits using the <code class="docutils literal"><span class="pre">LIAS?</span></code> GPIB query. Optionally, status
+bits can be provided and interpreted.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>status</strong> (<em>str</em><em>, </em><em>optional</em>) – Status bits to decode. If not supplied,
+the status bits will be read from the lock-in amplifier.</li>
+<li><strong>verbose</strong> (<em>bool</em>) – Explains the status bits if <cite>True</cite></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><em>str</em> – Status bits in binary form.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.lock_in_amplifiers.SRS_SR844.identify">
+<code class="descname">identify</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/lock_in_amplifiers.html#SRS_SR844.identify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.lock_in_amplifiers.SRS_SR844.identify" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><em>str</em> – The response from an <code class="docutils literal"><span class="pre">*IDN?</span></code> GPIB query.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Modules</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="data_acquisition_units.html">Data Acquisition Units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="function_generators.html">Function Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gyros.html">Fiber Optic Gyroscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="laser_diode_drivers.html">Laser Diode Drivers</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Lock-in Amplifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optical_power_meters.html">Optical Power Meters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oscilloscopes.html">Oscilloscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rotation_stages.html">Rotation Stages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spectrum_analyzers.html">Spectrum Analyzers</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Jonathan Wheeler.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/modules/lock_in_amplifiers.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,141 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hardware.optical_power_meters &#8212; Digonnet Hardware 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for hardware.optical_power_meters</h1><div class="highlight"><pre>
+<span></span><span class="c1"># coding: utf-8</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Optical Power Meters</span>
+<span class="sd">====================</span>
+
+<span class="sd">.. module:: optical_power_meters</span>
+<span class="sd">   :platform: Windows, Linux, OSX</span>
+<span class="sd">   :synopsis: Python wrappers for optical power meters.</span>
+
+<span class="sd">.. moduleauthor:: Jonathan Wheeler &lt;jamwheel@stanford.edu&gt;</span>
+
+<span class="sd">This module provides support for controlling optical power meters with Python.</span>
+<span class="sd">Optical power meters can be loaded by</span>
+
+<span class="sd">&gt;&gt;&gt; import hardware</span>
+<span class="sd">&gt;&gt;&gt; opm = hardware.function_generators.Newport_1830_C(&#39;GPIB0:...&#39;)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">visa</span>
+
+
+<div class="viewcode-block" id="Newport_1830_C"><a class="viewcode-back" href="../../modules/optical_power_meters.html#hardware.optical_power_meters.Newport_1830_C">[docs]</a><span class="k">class</span> <span class="nc">Newport_1830_C</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hardware wrapper for Newport 1830C optical power meter.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        visa_search_term (str): The address that is passed to</span>
+<span class="sd">            ``visa.ResourceManager().open_resource()``</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        power (float): The measured power in Watts</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="n">visa</span><span class="o">.</span><span class="n">ResourceManager</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span> <span class="o">=</span> <span class="n">rm</span><span class="o">.</span><span class="n">open_resource</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Newport_1830_C.identify"><a class="viewcode-back" href="../../modules/optical_power_meters.html#hardware.optical_power_meters.Newport_1830_C.identify">[docs]</a>    <span class="k">def</span> <span class="nf">identify</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The response from an ``*IDN?`` GPIB query.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;*IDN?&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">power</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;D?&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/data_acquisition_units.html">Data Acquisition Units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/function_generators.html">Function Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/gyros.html">Fiber Optic Gyroscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/laser_diode_drivers.html">Laser Diode Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/lock_in_amplifiers.html">Lock-in Amplifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/optical_power_meters.html">Optical Power Meters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/oscilloscopes.html">Oscilloscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/rotation_stages.html">Rotation Stages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/spectrum_analyzers.html">Spectrum Analyzers</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Jonathan Wheeler.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
