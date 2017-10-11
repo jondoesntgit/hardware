@@ -71,6 +71,12 @@ if idn in resources_dict.keys():
     osc = Agilent_DSO1024A(resources_dict[idn])
     print('osc = %s' % idn[:-1])
 
+idn = 'Rohde&Schwarz,FSEA 20,847121/025,3.30\n'
+if idn in resources_dict.keys():
+    from .spectrum_analyzers import Rohde_Schwarz_FSEA_20
+    rfsa = Rohde_Schwarz_FSEA_20(resources_dict[idn])
+    print('rfsa = %s' % idn[:-1])
+
 # TODO
 # Load Newport Optical Power Meter
 # try:

@@ -71,3 +71,16 @@ class ANDO_AQ6317B:
 
     # Alias
     acquire = get_spectrum
+
+
+class Rohde_Schwarz_FSEA_20:
+    """
+    Hardware wrapper for Rohde & Schwarz FSEA 20 RF Spectrum Analyzer
+
+    Parameters:
+        visa_search_term (str): The address that is passed to
+            ``visa.ResourceManager().open_resource()``
+    """
+    def __init__(self, visa_search_term):
+        rm = visa.ResourceManager()
+        self.inst = rm.open_resource(visa_search_term)
