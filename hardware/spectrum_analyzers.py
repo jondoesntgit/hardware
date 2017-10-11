@@ -84,3 +84,85 @@ class Rohde_Schwarz_FSEA_20:
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
+
+    @property
+    def center(self):
+        float(self.inst.query('FREQ:CENT?'))
+
+    @center.setter
+    def center(self, Hz):
+        self.inst.write('FREQ:CENT %s' % Hz)
+
+    @property
+    def span(self):
+        return float(self.inst.query('FREQ:SPAN?'))
+
+    @span.setter
+    def span(self, Hz):
+        self.inst.write('FREQ:SPAN %s' % Hz)
+
+    @property
+    def reference(self):
+        return float(self.inst.query('DISPLAY:TRACE:Y:RLEVEL?'))
+
+    @reference.setter
+    def reference(self, power):
+        self.inst.write("DISPLAY:TRACE:Y:RLEVEL %s" % power)
+
+    @property
+    def start(self):
+        return float(self.inst.query('FREQ:STAR?'))
+
+    @start.setter
+    def start(self, Hz):
+        self.inst.write('FREQ:STAR %s' % Hz)
+
+    @property
+    def stop(self):
+        return float(self.inst.query('FREQ:STOP?'))
+
+    @stop.setter
+    def stop(self, Hz):
+        self.inst.write('FREQ:STOP %s' % Hz)
+
+    @property
+    def time(self):
+        return float(self.inst.query('SWEEP:TIME?'))
+
+    @time.setter
+    def time(self, seconds):
+        self.inst.write('SWEEP:TIME %fs' % seconds)
+
+    @property
+    def vbw(self):
+        return float(self.inst.query('BAND:VID?'))
+
+    @vbw.setter
+    def vbw(self, Hz):
+        self.inst.write('BAND:VID %s' % Hz)
+
+    @property
+    def rbw(self):
+        return float(self.inst.query('BAND?'))
+
+    @rbw.setter
+    def rbw(self, Hz):
+        self.inst.write('BAND %s' % Hz)
+
+    @property
+    def averages(self):
+        return float(self.inst.query('AVER:COUNT?'))
+
+    @averages.setter
+    def averages(self, count):
+        self.inst.write('AVER:COUNT %i' % count)
+
+    """High level commands..."""
+    def acquire(self):
+        """Returns a tuple of the frequencies (Hz) and powers of the trace.
+        For the resolution bandwidth, use the ``rbw`` property.
+        """
+        powers = [float(p) for p in self.inst.query('TRAC? TRACE1').split(',')]
+        freqs = np.linspace(self.start, self.stop, len(powers))
+
+        return freqs, powers
