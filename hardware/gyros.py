@@ -78,6 +78,8 @@ class Gyro:
             if 'radius' in data:
                 self.diameter = data['radius'] * 2
                 self.radius = data['radius']
+            if 'sensitivity' in data:
+                self.sensitivity = data['sensitivity']
 
     def home(self):
         """
@@ -115,7 +117,7 @@ class Gyro:
         rot.wait_until_motor_is_idle()
         rot.angle = start_angle
 
-    def get_scale_factor(self, sensitivity=.3, velocity=1, pitch=37.4):
+    def get_scale_factor(self, sens=None, velocity=1, pitch=37.4):
         """
         A partial
         python port of Jacob Chamoun's matlab script to grab the scale factor
@@ -136,6 +138,10 @@ class Gyro:
             :math:`\Omega[t] = S \cdot V[t]`
         """
 
+        if sens:
+            sensitivity = sens
+        else:
+            sensitivity=.3
         # set sensitivity and store current sensitivity
         cal_sensitivity = lia.sensitivity
         lia.sensitivity = sensitivity
@@ -144,12 +150,14 @@ class Gyro:
         # integration
         cal_integration_time = lia.time_constant
         lia.time_constant = 0.01
-
+        
+        # set the rotation speed and store the current
+        # rotation speed
         cal_velocity = rot.velocity
         rot.velocity = velocity
 
         # set the acquisition rate
-        cal_acquisition_rate = floor(1/cal_integration_time)
+        cal_acquisition_rate = floor(1/cal_integration_time) # should this be 1/(3*integration time)??
 
         # start acquisition and store the calibrated data
         rot.ccw(5, background=True)
@@ -174,7 +182,7 @@ class Gyro:
         return degrees_per_hour_per_volt
 
     def tombstone(self, seconds=None, minutes=None, hours=None, rate=10,
-                  autophase=False, autohome=True, scale_factor=0):
+                  autophase=False, autohome=True, scale_factor=0, sensitvity=0.3):
         """
         Performs a tombstone test of the gyro. The gyro records a time series
         of rotation data when no rotation is applied to it. This data can be
@@ -219,7 +227,7 @@ class Gyro:
             scale_factor = self.scale_factor
 
         elif not scale_factor:
-            scale_factor = self.get_scale_factor()
+            scale_factor = self.get_scale_factor(sens = sensitivity)
 
         start = time.time()
         data = daq.read(duration, rate)
