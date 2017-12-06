@@ -1,15 +1,12 @@
 import visa
 import sys
+import os
 
-# Check Serial
-try:
+# Load the rotation stage if the hostname environment variable is set
+
+if os.getenv('ROTATION_STAGE_SERVER'):
     from .rotation_stages import NSC_A1
-    rot = NSC_A1()
-    print('rot = %s' % rot.identify())
-    print('  Rotation platform angle = %.2f' % rot.angle)
-except:
-    # print("Couldn't open rotation stage")
-    pass
+    rot = NSC_A1(hostname=os.getenv('ROTATION_STAGE_SERVER'))
 
 
 # see what's on the bus
