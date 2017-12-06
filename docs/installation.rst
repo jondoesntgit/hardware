@@ -45,4 +45,21 @@ The reason why ``hardware`` is repeated twice is because of the directory file s
        ├── oscilloscopes.py
        ├── rotation_stages.py
        └── spectrum_analyzers.py
+
+Note that in order to use the rotation stages in the autoimport script in 
+``/hardware/hardware/__init__.py``, you need to set an environment variable
+``ROTATION_STAGE_SERVER``. On POSIX systems (Mac and Linux), this can be done
+by adding a line to your ``.bashrc`` file:
+
+.. code:: bash
+
+   ROTATION_STAGE_SERVER="http://hostname.stanford.edu"
+
+On a Windows environment, type the following in the command line:
+
+.. code:: bash
+
+   setx ROTATION_STAGE_SERVER "http://hostname.stanford.edu"
+
+Then close out of the command line. In all future command lines, it will be loaded into the environment variables automatically. You can check this with ``echo %ROTATION_STAGE_SERVER%``.
        
