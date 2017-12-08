@@ -40,7 +40,7 @@ class NI_9215:
         self.max_voltage = None
 
     def read(self, seconds=1, rate=None, max_voltage=None, timeout=0,
-             verbose=False):
+             verbose=False, oversampling_ratio=10):
         """
         Parameters
         ----------
@@ -66,7 +66,14 @@ class NI_9215:
         verbose : bool
             If set to ``True``, this function will output any assumptions made
             about the ``rate`` or ``max_voltage`` parameters.
-
+        oversampling_ratio : int
+            If N samples of the same quantity are taken, each with 
+            uncorrelated errors, averaging these values will reduce the noise
+            by a factor of :math:`\sqrt{N}`. By default, the output rate of 
+            the data returned by 'read' is 1/10 the bandwidth of the lock-in
+            amplifier. We can reduce our noise to a theoretical limit by sampling
+            at the lock-in amplifier bandwidth, and then downsampling via simple
+            averages of size N.
 
         Returns
         -------
@@ -118,7 +125,7 @@ class NI_9215:
             DAQmxCreateTask("", byref(taskHandle))
             DAQmxCreateAIVoltageChan(taskHandle, "%s/ai0" % self.device_name, "", DAQmx_Val_Cfg_Default, -10, 10, DAQmx_Val_Volts,
                                      None)
-            DAQmxCfgSampClkTiming(taskHandle, "", rate, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, sample_size)
+            DAQmxCfgSampClkTiming(taskHandle, "", rate*oversampling_ratio, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, sample_size)
             # DAQmx Start Code
             DAQmxStopTask(taskHandle)
             DAQmxStartTask(taskHandle)
@@ -137,7 +144,7 @@ class NI_9215:
 
         # TODO clean this up
         self.data = self.data/10 * max_voltage
-        return self.data
+        return numpy.mean(self.data.reshape(-1, 3), axis=1)
 
     def identify(self):
         """
