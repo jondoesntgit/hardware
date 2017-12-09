@@ -15,6 +15,8 @@ except:
     print("It seems that niDAQmx is not installed on this system.")
 
 import numpy
+import ctypes
+from ctypes import byref
 from hardware import *
 
 
