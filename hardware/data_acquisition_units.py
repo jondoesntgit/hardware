@@ -36,7 +36,7 @@ class NI_9215:
 
 
     """
-    def __init__(self, device_name="Dev1"):
+    def __init__(self, device_name="Dev3"):
         self.device_name = device_name
         self.rate = None
         self.max_voltage = None
@@ -127,7 +127,7 @@ class NI_9215:
             DAQmxCreateTask("", byref(taskHandle))
             DAQmxCreateAIVoltageChan(taskHandle, "%s/ai0" % self.device_name, "", DAQmx_Val_Cfg_Default, -10, 10, DAQmx_Val_Volts,
                                      None)
-            DAQmxCfgSampClkTiming(taskHandle, "", rate*oversampling_ratio, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, sample_size)
+            DAQmxCfgSampClkTiming(taskHandle, "", rate*oversampling_ratio, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, sample_size*oversampling_ratio)
             # DAQmx Start Code
             DAQmxStopTask(taskHandle)
             DAQmxStartTask(taskHandle)
