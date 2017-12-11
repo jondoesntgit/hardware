@@ -114,7 +114,7 @@ class NI_9215:
                 print("Auto-setting max_voltage to %s based on "
                 "LIA settings" % max_voltage_string)
 
-        sample_size = int(seconds * rate)
+        sample_size = int(seconds * rate * oversampling_ratio)
         if timeout == 0:
             timeout = seconds
         # Declaration of variable passed by reference
@@ -127,7 +127,7 @@ class NI_9215:
             DAQmxCreateTask("", byref(taskHandle))
             DAQmxCreateAIVoltageChan(taskHandle, "%s/ai0" % self.device_name, "", DAQmx_Val_Cfg_Default, -10, 10, DAQmx_Val_Volts,
                                      None)
-            DAQmxCfgSampClkTiming(taskHandle, "", rate*oversampling_ratio, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, sample_size*oversampling_ratio)
+            DAQmxCfgSampClkTiming(taskHandle, "", rate*oversampling_ratio, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, sample_size)
             # DAQmx Start Code
             DAQmxStopTask(taskHandle)
             DAQmxStartTask(taskHandle)
