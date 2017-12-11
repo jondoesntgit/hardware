@@ -64,20 +64,28 @@ class Gyro:
             # Strip any comments
             for line in gyro_file:
                 string += re.sub('//.*', '', line)
-            data = json.loads(string)
+            self.data = json.loads(string)
 
-            if 'name' in data:
-                self.name = data['name']
-            if 'length' in data:
-                self.length = data['length']
-            if 'pitch' in data:
-                self.pitch = data['pitch']
-            if 'diameter' in data:
-                self.diameter = data['diameter']
-                self.radius = data['diameter'] / 2
-            if 'radius' in data:
-                self.diameter = data['radius'] * 2
-                self.radius = data['radius']
+            self.filepath = filepath
+
+            if 'name' in self.data:
+                self.name = self.data['name']
+            if 'length' in self.data:
+                self.length = self.data['length']
+            if 'pitch' in self.data:
+                self.pitch = self.data['pitch']
+            if 'diameter' in self.data:
+                self.diameter = self.data['diameter']
+                self.radius = self.data['diameter'] / 2
+            if 'radius' in self.data:
+                self.diameter = self.data['radius'] * 2
+                self.radius = self.data['radius']
+
+    def __repr__(self):
+        return "Gyro('%s')" % self.filepath
+
+    def __getitem__(self, key):
+        return self.data[key]
 
     def home(self):
         """
