@@ -81,6 +81,11 @@ if idn in resources_dict.keys():
 # except:
 #    pass
 
+# Load a Gyro if defined in environment variable
+if os.getenv('DEFAULT_GYRO'):
+    from .gyros import Gyro
+    fog = Gyro(filepath=os.getenv('DEFAULT_GYRO'))
+    print('fog = %s' % fog)
 
 # Check for DAQ
 # TODO

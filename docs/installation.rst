@@ -46,9 +46,14 @@ The reason why ``hardware`` is repeated twice is because of the directory file s
        ├── rotation_stages.py
        └── spectrum_analyzers.py
 
-Note that in order to use the rotation stages in the autoimport script in 
-``/hardware/hardware/__init__.py``, you need to set an environment variable
-``ROTATION_STAGE_SERVER``. On POSIX systems (Mac and Linux), this can be done
+Note that in order to automatically load certain pieces of hardware
+in the autoimport script in ``/hardware/hardware/__init__.py``,
+you need to set environment variables. These currently include:
+
+- ``ROTATION_STAGE_SERVER`` (URL of the rotation stage server)
+- ``DEFAULT_GYRO`` (absolute path of fog JSON file)
+
+On POSIX systems (Mac and Linux), this can be done
 by adding a line to your ``.bashrc`` file:
 
 .. code:: bash
