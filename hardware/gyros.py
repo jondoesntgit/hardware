@@ -123,7 +123,7 @@ class Gyro:
         rot.wait_until_motor_is_idle()
         rot.angle = start_angle
 
-    def get_scale_factor(self, sensitivity=.3, velocity=1, pitch=37.4):
+    def get_scale_factor(self, sensitivity=.3, velocity=1, pitch=None):
         """
         A partial
         python port of Jacob Chamoun's matlab script to grab the scale factor
@@ -174,6 +174,9 @@ class Gyro:
         lia.time_constant = cal_integration_time
         lia.sensitivity = cal_sensitivity
         rot.velocity = cal_velocity
+
+        if not pitch:
+            pitch = float(self.data.get('pitch', 0))
 
         volt_seconds_per_degree = (mean(ccw_data) - mean(cw_data))/2\
             / cos(pitch * pi / 180)
