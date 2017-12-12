@@ -10,12 +10,17 @@ Fiber Optic Gyroscopes
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
 """
 
+
+
 try:
     from hardware import lia, rot, daq
 except:
-    print("""Could not automatically import lock-in amplifier and rotation
-    stage. Some functions may not work.
-    """)
+    print(
+        "Could not automatically import at least one of the following:\n"
+        "   - lock-in amplifier rotation\n"
+        "   - rotation stage\n"
+        "   - data acquisition unit\n"
+        "Some functions may not work.")
 
 from allantools import oadev
 import time
@@ -64,20 +69,28 @@ class Gyro:
             # Strip any comments
             for line in gyro_file:
                 string += re.sub('//.*', '', line)
-            data = json.loads(string)
+            self.data = json.loads(string)
 
-            if 'name' in data:
-                self.name = data['name']
-            if 'length' in data:
-                self.length = data['length']
-            if 'pitch' in data:
-                self.pitch = data['pitch']
-            if 'diameter' in data:
-                self.diameter = data['diameter']
-                self.radius = data['diameter'] / 2
-            if 'radius' in data:
-                self.diameter = data['radius'] * 2
-                self.radius = data['radius']
+            self.filepath = filepath
+
+            if 'name' in self.data:
+                self.name = self.data['name']
+            if 'length' in self.data:
+                self.length = self.data['length']
+            if 'pitch' in self.data:
+                self.pitch = self.data['pitch']
+            if 'diameter' in self.data:
+                self.diameter = self.data['diameter']
+                self.radius = self.data['diameter'] / 2
+            if 'radius' in self.data:
+                self.diameter = self.data['radius'] * 2
+                self.radius = self.data['radius']
+
+    def __repr__(self):
+        return "Gyro('%s')" % self.filepath
+
+    def __getitem__(self, key):
+        return self.data[key]
 
     def home(self):
         """
@@ -115,7 +128,7 @@ class Gyro:
         rot.wait_until_motor_is_idle()
         rot.angle = start_angle
 
-    def get_scale_factor(self, sensitivity=.3, velocity=1, pitch=37.4):
+    def get_scale_factor(self, sensitivity=None, velocity=1, pitch=None):
         """
         A partial
         python port of Jacob Chamoun's matlab script to grab the scale factor
@@ -136,6 +149,8 @@ class Gyro:
             :math:`\Omega[t] = S \cdot V[t]`
         """
 
+        if not sensitivity:
+            sensitivity = self.data.get('sensitivity', .3)
         # set sensitivity and store current sensitivity
         cal_sensitivity = lia.sensitivity
         lia.sensitivity = sensitivity
@@ -144,12 +159,14 @@ class Gyro:
         # integration
         cal_integration_time = lia.time_constant
         lia.time_constant = 0.01
-
+        
+        # set the rotation speed and store the current
+        # rotation speed
         cal_velocity = rot.velocity
         rot.velocity = velocity
 
         # set the acquisition rate
-        cal_acquisition_rate = floor(1/cal_integration_time)
+        cal_acquisition_rate = floor(1/cal_integration_time) # should this be 1/(3*integration time)??
 
         # start acquisition and store the calibrated data
         rot.ccw(5, background=True)
@@ -167,6 +184,9 @@ class Gyro:
         lia.sensitivity = cal_sensitivity
         rot.velocity = cal_velocity
 
+        if not pitch:
+            pitch = float(self.data.get('pitch', 0))
+
         volt_seconds_per_degree = (mean(ccw_data) - mean(cw_data))/2\
             / cos(pitch * pi / 180)
         volt_hours_per_degree = volt_seconds_per_degree / 3600
@@ -174,7 +194,7 @@ class Gyro:
         return degrees_per_hour_per_volt
 
     def tombstone(self, seconds=None, minutes=None, hours=None, rate=10,
-                  autophase=False, autohome=True, scale_factor=0):
+                  autophase=False, autohome=True, scale_factor=0, sensitvity=None):
         """
         Performs a tombstone test of the gyro. The gyro records a time series
         of rotation data when no rotation is applied to it. This data can be
@@ -219,7 +239,7 @@ class Gyro:
             scale_factor = self.scale_factor
 
         elif not scale_factor:
-            scale_factor = self.get_scale_factor()
+            scale_factor = self.get_scale_factor(sensitivity = sensitivity)
 
         start = time.time()
         data = daq.read(duration, rate)
