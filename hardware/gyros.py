@@ -117,7 +117,7 @@ class Gyro:
         rot.wait_until_motor_is_idle()
         rot.angle = start_angle
 
-    def get_scale_factor(self, sens=None, velocity=1, pitch=37.4):
+    def get_scale_factor(self, sensitivity=None, velocity=1, pitch=37.4):
         """
         A partial
         python port of Jacob Chamoun's matlab script to grab the scale factor
@@ -138,10 +138,8 @@ class Gyro:
             :math:`\Omega[t] = S \cdot V[t]`
         """
 
-        if sens:
-            sensitivity = sens
-        else:
-            sensitivity=.3
+        if not sensitivity:
+            sensitivity = self.data.get('sensitivity', .3)
         # set sensitivity and store current sensitivity
         cal_sensitivity = lia.sensitivity
         lia.sensitivity = sensitivity
@@ -182,7 +180,7 @@ class Gyro:
         return degrees_per_hour_per_volt
 
     def tombstone(self, seconds=None, minutes=None, hours=None, rate=10,
-                  autophase=False, autohome=True, scale_factor=0, sensitvity=0.3):
+                  autophase=False, autohome=True, scale_factor=0, sensitvity=None):
         """
         Performs a tombstone test of the gyro. The gyro records a time series
         of rotation data when no rotation is applied to it. This data can be
@@ -227,7 +225,7 @@ class Gyro:
             scale_factor = self.scale_factor
 
         elif not scale_factor:
-            scale_factor = self.get_scale_factor(sens = sensitivity)
+            scale_factor = self.get_scale_factor(sensitivity = sensitivity)
 
         start = time.time()
         data = daq.read(duration, rate)
