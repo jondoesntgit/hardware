@@ -36,7 +36,14 @@ class NI_9215:
 
 
     """
-    def __init__(self, device_name="Dev3"):
+    def __init__(self, device_name=None):
+        if not device_name:
+            # Note, this will probably not work if multiple devices exist
+            n=1024
+            data1 = ctypes.create_string_buffer(n)
+            DAQmxGetSysDevNames(data1, n)
+            device_name = str(data1.value)
+
         self.device_name = device_name
         self.rate = None
         self.max_voltage = None
