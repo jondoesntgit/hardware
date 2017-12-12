@@ -10,12 +10,17 @@ Fiber Optic Gyroscopes
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
 """
 
+
+
 try:
     from hardware import lia, rot, daq
 except:
-    print("""Could not automatically import lock-in amplifier and rotation
-    stage. Some functions may not work.
-    """)
+    print(
+        "Could not automatically import at least one of the following:\n"
+        "   - lock-in amplifier rotation\n"
+        "   - rotation stage\n"
+        "   - data acquisition unit\n"
+        "Some functions may not work.")
 
 from allantools import oadev
 import time

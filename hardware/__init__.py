@@ -81,12 +81,6 @@ if idn in resources_dict.keys():
 # except:
 #    pass
 
-# Load a Gyro if defined in environment variable
-if os.getenv('DEFAULT_GYRO'):
-    from .gyros import Gyro
-    fog = Gyro(filepath=os.getenv('DEFAULT_GYRO'))
-    print('fog = %s' % fog)
-
 # Check for DAQ
 # TODO
 # Run some sort of script to detect if the daq is plugge in
@@ -95,3 +89,13 @@ if sys.platform.startswith('win'):
     from .data_acquisition_units import NI_9215
     daq = NI_9215()
     print(daq.identify())
+
+# Load a Gyro if defined in environment variable
+# 
+# Gyro depends on lia, daq, and rot. Make sure these are defined before fog.
+if os.getenv('DEFAULT_GYRO'):
+    from .gyros import Gyro
+    fog = Gyro(filepath=os.getenv('DEFAULT_GYRO'))
+    print('fog = %s' % fog)
+
+
