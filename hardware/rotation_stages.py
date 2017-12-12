@@ -40,6 +40,15 @@ class NSC_A1:
         r = requests.get(self.hostname + '/rot/angle')
         return r.json()['angle']
 
+    @property
+    def velocity(self):
+        r = requests.get(self.hostname + '/rot/velocity')
+        return r.json()['velocity']        
+
+    @velocity.setter
+    def velocity(self, val):
+        requests.get(self.hostname + '/rot/velocity/%f' % val)
+
     @angle.setter
     def angle(self, val):
         requests.get(self.hostname + '/rot/angle/%f' % val)
