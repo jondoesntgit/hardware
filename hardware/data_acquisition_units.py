@@ -17,7 +17,6 @@ except:
 import numpy
 import ctypes
 from ctypes import byref
-from hardware import *
 
 
 class NI_9215:
@@ -36,20 +35,20 @@ class NI_9215:
 
 
     """
-    def __init__(self, device_name=None):
+    def __init__(self, device_name=None, max_voltage=None, rate=None):
         if not device_name:
             # Note, this will probably not work if multiple devices exist
             n=1024
             data1 = ctypes.create_string_buffer(n)
             DAQmxGetSysDevNames(data1, n)
-            device_name = str(data1.value)
+            device_name = data1.value.decode('utf-8')
 
         self.device_name = device_name
-        self.rate = None
-        self.max_voltage = None
+        self.rate = rate
+        self.max_voltage = max_voltage
 
     def read(self, seconds=1, rate=None, max_voltage=None, timeout=0,
-             verbose=False, oversampling_ratio=10):
+             verbose=False, oversampling_ratio=10, task_name=""):
         """
         Parameters
         ----------
@@ -99,6 +98,7 @@ class NI_9215:
         elif self.rate:
             rate = self.rate
         else:
+            from hardware import lia
             rate = .1/lia.time_constant
             rate = max(2, rate)
             if verbose:
@@ -106,9 +106,13 @@ class NI_9215:
                 "LIA settings" % rate)
 
         # gather the maximum voltage from the inputs
-        if max_voltage is None and self.max_voltage:
+        if max_voltage:
+            # used the passed max_voltage
+            pass
+        elif self.max_voltage:
             max_voltage = self.max_voltage
         else:
+            from hardware import lia
             max_voltage = lia.sensitivity
             max_voltage_string = "%2g V"
             if max_voltage > .001:
@@ -131,7 +135,7 @@ class NI_9215:
 
         try:
             # DAQmx Configure Code
-            DAQmxCreateTask("", byref(taskHandle))
+            DAQmxCreateTask(task_name, byref(taskHandle))
             DAQmxCreateAIVoltageChan(taskHandle, "%s/ai0" % self.device_name, "", DAQmx_Val_Cfg_Default, -10, 10, DAQmx_Val_Volts,
                                      None)
             DAQmxCfgSampClkTiming(taskHandle, "", rate*oversampling_ratio, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, sample_size)
@@ -153,7 +157,7 @@ class NI_9215:
 
         # TODO clean this up
         self.data = self.data/10 * max_voltage
-        return numpy.mean(self.data.reshape(-1, 3), axis=1)
+        return numpy.mean(self.data.reshape(-1, oversampling_ratio), axis=1)
 
     def identify(self):
         """
@@ -162,6 +166,13 @@ class NI_9215:
         buf = ctypes.create_string_buffer(16)
         DAQmxGetDevProductType(self.device_name, buf, 16);
         return "".join([(c).decode() for c in buf][:-1])
+
+    @property
+    def tasks(self):
+        n=1024
+        data1 = ctypes.create_string_buffer(n)
+        DAQmxGetSysTasks(data1, n)
+        return data1.value.decode('utf-8')
 
     def reset(self):
         """Resets the DAQ to factory settings"""
