@@ -1,6 +1,7 @@
 import visa
 import sys
 import os
+import ctypes
 
 # Load the rotation stage if the hostname environment variable is set
 
@@ -50,6 +51,12 @@ if idn in resources_dict.keys():
 
 
 idn = 'Stanford_Research_Systems,SR844,s/n48713,ver1.006\n'
+if idn in resources_dict.keys():
+    from .lock_in_amplifiers import SRS_SR844
+    lia = SRS_SR844(resources_dict[idn])
+    print('lia = %s' % idn[:-1])
+	
+idn = 'Stanford_Research_Systems,SR844,s/n43595,ver1.006\n'
 if idn in resources_dict.keys():
     from .lock_in_amplifiers import SRS_SR844
     lia = SRS_SR844(resources_dict[idn])

@@ -15,7 +15,8 @@ except:
     print("It seems that niDAQmx is not installed on this system.")
 
 import numpy
-from hardware import *
+import ctypes
+from ctypes import byref
 
 
 class NI_9215:
@@ -34,13 +35,20 @@ class NI_9215:
 
 
     """
-    def __init__(self, device_name="Dev1"):
+    def __init__(self, device_name=None, max_voltage=None, rate=None):
+        if not device_name:
+            # Note, this will probably not work if multiple devices exist
+            n=1024
+            data1 = ctypes.create_string_buffer(n)
+            DAQmxGetSysDevNames(data1, n)
+            device_name = data1.value.decode('utf-8')
+
         self.device_name = device_name
-        self.rate = None
-        self.max_voltage = None
+        self.rate = rate
+        self.max_voltage = max_voltage
 
     def read(self, seconds=1, rate=None, max_voltage=None, timeout=0,
-             verbose=False):
+             verbose=False, oversampling_ratio=10, task_name=""):
         """
         Parameters
         ----------
@@ -66,7 +74,14 @@ class NI_9215:
         verbose : bool
             If set to ``True``, this function will output any assumptions made
             about the ``rate`` or ``max_voltage`` parameters.
-
+        oversampling_ratio : int
+            If N samples of the same quantity are taken, each with 
+            uncorrelated errors, averaging these values will reduce the noise
+            by a factor of :math:`\sqrt{N}`. By default, the output rate of 
+            the data returned by 'read' is 1/10 the bandwidth of the lock-in
+            amplifier. We can reduce our noise to a theoretical limit by sampling
+            at the lock-in amplifier bandwidth, and then downsampling via simple
+            averages of size N.
 
         Returns
         -------
@@ -83,6 +98,7 @@ class NI_9215:
         elif self.rate:
             rate = self.rate
         else:
+            from hardware import lia
             rate = .1/lia.time_constant
             rate = max(2, rate)
             if verbose:
@@ -90,9 +106,13 @@ class NI_9215:
                 "LIA settings" % rate)
 
         # gather the maximum voltage from the inputs
-        if max_voltage is None and self.max_voltage:
+        if max_voltage:
+            # used the passed max_voltage
+            pass
+        elif self.max_voltage:
             max_voltage = self.max_voltage
         else:
+            from hardware import lia
             max_voltage = lia.sensitivity
             max_voltage_string = "%2g V"
             if max_voltage > .001:
@@ -105,7 +125,7 @@ class NI_9215:
                 print("Auto-setting max_voltage to %s based on "
                 "LIA settings" % max_voltage_string)
 
-        sample_size = int(seconds * rate)
+        sample_size = int(seconds * rate * oversampling_ratio)
         if timeout == 0:
             timeout = seconds
         # Declaration of variable passed by reference
@@ -115,10 +135,10 @@ class NI_9215:
 
         try:
             # DAQmx Configure Code
-            DAQmxCreateTask("", byref(taskHandle))
+            DAQmxCreateTask(task_name, byref(taskHandle))
             DAQmxCreateAIVoltageChan(taskHandle, "%s/ai0" % self.device_name, "", DAQmx_Val_Cfg_Default, -10, 10, DAQmx_Val_Volts,
                                      None)
-            DAQmxCfgSampClkTiming(taskHandle, "", rate, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, sample_size)
+            DAQmxCfgSampClkTiming(taskHandle, "", rate*oversampling_ratio, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, sample_size)
             # DAQmx Start Code
             DAQmxStopTask(taskHandle)
             DAQmxStartTask(taskHandle)
@@ -137,7 +157,7 @@ class NI_9215:
 
         # TODO clean this up
         self.data = self.data/10 * max_voltage
-        return self.data
+        return numpy.mean(self.data.reshape(-1, oversampling_ratio), axis=1)
 
     def identify(self):
         """
@@ -146,6 +166,13 @@ class NI_9215:
         buf = ctypes.create_string_buffer(16)
         DAQmxGetDevProductType(self.device_name, buf, 16);
         return "".join([(c).decode() for c in buf][:-1])
+
+    @property
+    def tasks(self):
+        n=1024
+        data1 = ctypes.create_string_buffer(n)
+        DAQmxGetSysTasks(data1, n)
+        return data1.value.decode('utf-8')
 
     def reset(self):
         """Resets the DAQ to factory settings"""

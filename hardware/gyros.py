@@ -194,7 +194,7 @@ class Gyro:
         return degrees_per_hour_per_volt
 
     def tombstone(self, seconds=None, minutes=None, hours=None, rate=10,
-                  autophase=False, autohome=True, scale_factor=0, sensitvity=None):
+                  autophase=False, autohome=True, scale_factor=0, sensitivity=None):
         """
         Performs a tombstone test of the gyro. The gyro records a time series
         of rotation data when no rotation is applied to it. This data can be
@@ -212,6 +212,8 @@ class Gyro:
                 between lock-in amplifier voltage and rotation rate in units
                 of deg/h/Volt. If this is not set, the gyro will run the
                 :func:`hardware.gyros.get_scale_factor` routine.
+			Sensitivity (float): The sensitivity of the LIA for the scale
+				calibration and taking data. Put in [V]
 
         Returns:
             Tombstone: A :class:`pyfog.tombstone.Tombstone` object
