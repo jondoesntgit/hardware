@@ -116,6 +116,101 @@
 
     <span class="c1"># Alias</span>
     <span class="n">acquire</span> <span class="o">=</span> <span class="n">get_spectrum</span></div>
+
+
+<div class="viewcode-block" id="Rohde_Schwarz_FSEA_20"><a class="viewcode-back" href="../../modules/spectrum_analyzers.html#hardware.spectrum_analyzers.Rohde_Schwarz_FSEA_20">[docs]</a><span class="k">class</span> <span class="nc">Rohde_Schwarz_FSEA_20</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hardware wrapper for Rohde &amp; Schwarz FSEA 20 RF Spectrum Analyzer</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        visa_search_term (str): The address that is passed to</span>
+<span class="sd">            ``visa.ResourceManager().open_resource()``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">visa_search_term</span><span class="p">):</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="n">visa</span><span class="o">.</span><span class="n">ResourceManager</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span> <span class="o">=</span> <span class="n">rm</span><span class="o">.</span><span class="n">open_resource</span><span class="p">(</span><span class="n">visa_search_term</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">center</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FREQ:CENT?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@center</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">center</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Hz</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FREQ:CENT </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">Hz</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">span</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FREQ:SPAN?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@span</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">span</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Hz</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FREQ:SPAN </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">Hz</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">reference</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;DISPLAY:TRACE:Y:RLEVEL?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@reference</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">reference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">power</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;DISPLAY:TRACE:Y:RLEVEL </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">power</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FREQ:STAR?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@start</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Hz</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FREQ:STAR </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">Hz</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FREQ:STOP?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@stop</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Hz</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FREQ:STOP </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">Hz</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;SWEEP:TIME?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@time</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seconds</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;SWEEP:TIME </span><span class="si">%f</span><span class="s1">s&#39;</span> <span class="o">%</span> <span class="n">seconds</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">vbw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;BAND:VID?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@vbw</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">vbw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Hz</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;BAND:VID </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">Hz</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rbw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;BAND?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@rbw</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">rbw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Hz</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;BAND </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">Hz</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">averages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;AVER:COUNT?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@averages</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">averages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;AVER:COUNT </span><span class="si">%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">count</span><span class="p">)</span>
+
+    <span class="sd">&quot;&quot;&quot;High level commands...&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Rohde_Schwarz_FSEA_20.acquire"><a class="viewcode-back" href="../../modules/spectrum_analyzers.html#hardware.spectrum_analyzers.Rohde_Schwarz_FSEA_20.acquire">[docs]</a>    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a tuple of the frequencies (Hz) and powers of the trace.</span>
+<span class="sd">        For the resolution bandwidth, use the ``rbw`` property.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">powers</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;TRAC? TRACE1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+        <span class="n">freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">powers</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">powers</span></div></div>
 </pre></div>
 
           </div>

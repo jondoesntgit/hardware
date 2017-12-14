@@ -60,7 +60,8 @@
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;It seems that niDAQmx is not installed on this system.&quot;</span><span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span>
-<span class="kn">from</span> <span class="nn">hardware</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">ctypes</span>
+<span class="kn">from</span> <span class="nn">ctypes</span> <span class="k">import</span> <span class="n">byref</span>
 
 
 <div class="viewcode-block" id="NI_9215"><a class="viewcode-back" href="../../modules/data_acquisition_units.html#hardware.data_acquisition_units.NI_9215">[docs]</a><span class="k">class</span> <span class="nc">NI_9215</span><span class="p">:</span>
@@ -79,13 +80,20 @@
 
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_name</span><span class="o">=</span><span class="s2">&quot;Dev1&quot;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_voltage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">device_name</span><span class="p">:</span>
+            <span class="c1"># Note, this will probably not work if multiple devices exist</span>
+            <span class="n">n</span><span class="o">=</span><span class="mi">1024</span>
+            <span class="n">data1</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">DAQmxGetSysDevNames</span><span class="p">(</span><span class="n">data1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+            <span class="n">device_name</span> <span class="o">=</span> <span class="n">data1</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">device_name</span> <span class="o">=</span> <span class="n">device_name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rate</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_voltage</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rate</span> <span class="o">=</span> <span class="n">rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_voltage</span> <span class="o">=</span> <span class="n">max_voltage</span>
 
 <div class="viewcode-block" id="NI_9215.read"><a class="viewcode-back" href="../../modules/data_acquisition_units.html#hardware.data_acquisition_units.NI_9215.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_voltage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-             <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+             <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">oversampling_ratio</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">task_name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -111,7 +119,14 @@
 <span class="sd">        verbose : bool</span>
 <span class="sd">            If set to ``True``, this function will output any assumptions made</span>
 <span class="sd">            about the ``rate`` or ``max_voltage`` parameters.</span>
-
+<span class="sd">        oversampling_ratio : int</span>
+<span class="sd">            If N samples of the same quantity are taken, each with </span>
+<span class="sd">            uncorrelated errors, averaging these values will reduce the noise</span>
+<span class="sd">            by a factor of :math:`\sqrt{N}`. By default, the output rate of </span>
+<span class="sd">            the data returned by &#39;read&#39; is 1/10 the bandwidth of the lock-in</span>
+<span class="sd">            amplifier. We can reduce our noise to a theoretical limit by sampling</span>
+<span class="sd">            at the lock-in amplifier bandwidth, and then downsampling via simple</span>
+<span class="sd">            averages of size N.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -128,6 +143,7 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">rate</span><span class="p">:</span>
             <span class="n">rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rate</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">hardware</span> <span class="k">import</span> <span class="n">lia</span>
             <span class="n">rate</span> <span class="o">=</span> <span class="o">.</span><span class="mi">1</span><span class="o">/</span><span class="n">lia</span><span class="o">.</span><span class="n">time_constant</span>
             <span class="n">rate</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">rate</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
@@ -135,9 +151,13 @@
                 <span class="s2">&quot;LIA settings&quot;</span> <span class="o">%</span> <span class="n">rate</span><span class="p">)</span>
 
         <span class="c1"># gather the maximum voltage from the inputs</span>
-        <span class="k">if</span> <span class="n">max_voltage</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_voltage</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">max_voltage</span><span class="p">:</span>
+            <span class="c1"># used the passed max_voltage</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_voltage</span><span class="p">:</span>
             <span class="n">max_voltage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_voltage</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">hardware</span> <span class="k">import</span> <span class="n">lia</span>
             <span class="n">max_voltage</span> <span class="o">=</span> <span class="n">lia</span><span class="o">.</span><span class="n">sensitivity</span>
             <span class="n">max_voltage_string</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%2g</span><span class="s2"> V&quot;</span>
             <span class="k">if</span> <span class="n">max_voltage</span> <span class="o">&gt;</span> <span class="o">.</span><span class="mi">001</span><span class="p">:</span>
@@ -150,7 +170,7 @@
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Auto-setting max_voltage to </span><span class="si">%s</span><span class="s2"> based on &quot;</span>
                 <span class="s2">&quot;LIA settings&quot;</span> <span class="o">%</span> <span class="n">max_voltage_string</span><span class="p">)</span>
 
-        <span class="n">sample_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seconds</span> <span class="o">*</span> <span class="n">rate</span><span class="p">)</span>
+        <span class="n">sample_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seconds</span> <span class="o">*</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">oversampling_ratio</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">timeout</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">timeout</span> <span class="o">=</span> <span class="n">seconds</span>
         <span class="c1"># Declaration of variable passed by reference</span>
@@ -160,10 +180,10 @@
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># DAQmx Configure Code</span>
-            <span class="n">DAQmxCreateTask</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">taskHandle</span><span class="p">))</span>
+            <span class="n">DAQmxCreateTask</span><span class="p">(</span><span class="n">task_name</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">taskHandle</span><span class="p">))</span>
             <span class="n">DAQmxCreateAIVoltageChan</span><span class="p">(</span><span class="n">taskHandle</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/ai0&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">device_name</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">DAQmx_Val_Cfg_Default</span><span class="p">,</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">DAQmx_Val_Volts</span><span class="p">,</span>
                                      <span class="kc">None</span><span class="p">)</span>
-            <span class="n">DAQmxCfgSampClkTiming</span><span class="p">(</span><span class="n">taskHandle</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">DAQmx_Val_Rising</span><span class="p">,</span> <span class="n">DAQmx_Val_FiniteSamps</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">)</span>
+            <span class="n">DAQmxCfgSampClkTiming</span><span class="p">(</span><span class="n">taskHandle</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">rate</span><span class="o">*</span><span class="n">oversampling_ratio</span><span class="p">,</span> <span class="n">DAQmx_Val_Rising</span><span class="p">,</span> <span class="n">DAQmx_Val_FiniteSamps</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">)</span>
             <span class="c1"># DAQmx Start Code</span>
             <span class="n">DAQmxStopTask</span><span class="p">(</span><span class="n">taskHandle</span><span class="p">)</span>
             <span class="n">DAQmxStartTask</span><span class="p">(</span><span class="n">taskHandle</span><span class="p">)</span>
@@ -182,7 +202,7 @@
 
         <span class="c1"># TODO clean this up</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">/</span><span class="mi">10</span> <span class="o">*</span> <span class="n">max_voltage</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span></div>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">oversampling_ratio</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="NI_9215.identify"><a class="viewcode-back" href="../../modules/data_acquisition_units.html#hardware.data_acquisition_units.NI_9215.identify">[docs]</a>    <span class="k">def</span> <span class="nf">identify</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -191,6 +211,13 @@
         <span class="n">buf</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
         <span class="n">DAQmxGetDevProductType</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device_name</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([(</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">buf</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">n</span><span class="o">=</span><span class="mi">1024</span>
+        <span class="n">data1</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">DAQmxGetSysTasks</span><span class="p">(</span><span class="n">data1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data1</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="NI_9215.reset"><a class="viewcode-back" href="../../modules/data_acquisition_units.html#hardware.data_acquisition_units.NI_9215.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Resets the DAQ to factory settings&quot;&quot;&quot;</span>

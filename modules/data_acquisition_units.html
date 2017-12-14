@@ -48,7 +48,7 @@
 <span id="data-acquisition-units"></span><h1>Data Acquisition Units<a class="headerlink" href="#module-data_acquisition_units" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="hardware.data_acquisition_units.NI_9215">
-<em class="property">class </em><code class="descclassname">hardware.data_acquisition_units.</code><code class="descname">NI_9215</code><span class="sig-paren">(</span><em>device_name=’Dev1’</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/data_acquisition_units.html#NI_9215"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.data_acquisition_units.NI_9215" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">hardware.data_acquisition_units.</code><code class="descname">NI_9215</code><span class="sig-paren">(</span><em>device_name=None</em>, <em>max_voltage=None</em>, <em>rate=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/data_acquisition_units.html#NI_9215"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.data_acquisition_units.NI_9215" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class provides support for the <a class="reference external" href="https://sine.ni.com/nips/cds/view/p/lang/en/nid/208793">NI 9215</a> Data
 Acquisition Unit. Much of the code base was adapted from examples at
 <a class="reference external" href="https://pythonhosted.org/PyDAQmx/">https://pythonhosted.org/PyDAQmx/</a>. It is my understanding that the
@@ -75,7 +75,7 @@ which is only available on Windows systems.</p>
 
 <dl class="method">
 <dt id="hardware.data_acquisition_units.NI_9215.read">
-<code class="descname">read</code><span class="sig-paren">(</span><em>seconds=1</em>, <em>rate=None</em>, <em>max_voltage=None</em>, <em>timeout=0</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/data_acquisition_units.html#NI_9215.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.data_acquisition_units.NI_9215.read" title="Permalink to this definition">¶</a></dt>
+<code class="descname">read</code><span class="sig-paren">(</span><em>seconds=1</em>, <em>rate=None</em>, <em>max_voltage=None</em>, <em>timeout=0</em>, <em>verbose=False</em>, <em>oversampling_ratio=10</em>, <em>task_name=’‘</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/data_acquisition_units.html#NI_9215.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.data_acquisition_units.NI_9215.read" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -103,6 +103,13 @@ on collecting data.</p>
 </li>
 <li><strong>verbose</strong> (<em>bool</em>) – If set to <code class="docutils literal"><span class="pre">True</span></code>, this function will output any assumptions made
 about the <code class="docutils literal"><span class="pre">rate</span></code> or <code class="docutils literal"><span class="pre">max_voltage</span></code> parameters.</li>
+<li><strong>oversampling_ratio</strong> (<em>int</em>) – If N samples of the same quantity are taken, each with
+uncorrelated errors, averaging these values will reduce the noise
+by a factor of <span class="math">\(\sqrt{N}\)</span>. By default, the output rate of
+the data returned by ‘read’ is 1/10 the bandwidth of the lock-in
+amplifier. We can reduce our noise to a theoretical limit by sampling
+at the lock-in amplifier bandwidth, and then downsampling via simple
+averages of size N.</li>
 </ul>
 </td>
 </tr>

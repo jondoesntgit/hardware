@@ -134,7 +134,7 @@ before running the tombstone test.</li>
 
 <dl class="method">
 <dt id="hardware.gyros.Gyro.get_scale_factor">
-<code class="descname">get_scale_factor</code><span class="sig-paren">(</span><em>sensitivity=0.3</em>, <em>velocity=1</em>, <em>pitch=37.4</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/gyros.html#Gyro.get_scale_factor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.gyros.Gyro.get_scale_factor" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_scale_factor</code><span class="sig-paren">(</span><em>sensitivity=None</em>, <em>velocity=1</em>, <em>pitch=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/gyros.html#Gyro.get_scale_factor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.gyros.Gyro.get_scale_factor" title="Permalink to this definition">¶</a></dt>
 <dd><p>A partial
 python port of Jacob Chamoun’s matlab script to grab the scale factor</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -172,7 +172,7 @@ of the earth rate.</p>
 
 <dl class="method">
 <dt id="hardware.gyros.Gyro.tombstone">
-<code class="descname">tombstone</code><span class="sig-paren">(</span><em>seconds=None</em>, <em>minutes=None</em>, <em>hours=None</em>, <em>rate=10</em>, <em>autophase=False</em>, <em>autohome=True</em>, <em>scale_factor=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/gyros.html#Gyro.tombstone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.gyros.Gyro.tombstone" title="Permalink to this definition">¶</a></dt>
+<code class="descname">tombstone</code><span class="sig-paren">(</span><em>seconds=None</em>, <em>minutes=None</em>, <em>hours=None</em>, <em>rate=10</em>, <em>autophase=False</em>, <em>autohome=True</em>, <em>scale_factor=0</em>, <em>sensitivity=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/gyros.html#Gyro.tombstone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.gyros.Gyro.tombstone" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs a tombstone test of the gyro. The gyro records a time series
 of rotation data when no rotation is applied to it. This data can be
 used to test the noise and bias stability of the gyroscope.</p>
@@ -188,10 +188,17 @@ used to test the noise and bias stability of the gyroscope.</p>
 <li><strong>autophase</strong> (<em>bool</em>) – If true, an autophase routine will be run.</li>
 <li><strong>autohome</strong> (<em>bool</em>) – If true, the gyro will return to the home position
 before running the tombstone test.</li>
-<li><strong>scale_factor</strong> (<em>float</em>) – The scale factor to use in order to convert
+<li><strong>scale_factor</strong> (<em>float</em>) – <p>The scale factor to use in order to convert
 between lock-in amplifier voltage and rotation rate in units
 of deg/h/Volt. If this is not set, the gyro will run the
-<code class="xref py py-func docutils literal"><span class="pre">hardware.gyros.get_scale_factor()</span></code> routine.</li>
+<code class="xref py py-func docutils literal"><span class="pre">hardware.gyros.get_scale_factor()</span></code> routine.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Sensitivity (float): The sensitivity of the LIA for the scale</dt>
+<dd>calibration and taking data. Put in [V]</dd>
+</dl>
+</div></blockquote>
+</li>
 </ul>
 </td>
 </tr>

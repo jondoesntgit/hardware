@@ -125,6 +125,28 @@ The second array contains the optical power in dBm.</td>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="hardware.spectrum_analyzers.Rohde_Schwarz_FSEA_20">
+<em class="property">class </em><code class="descclassname">hardware.spectrum_analyzers.</code><code class="descname">Rohde_Schwarz_FSEA_20</code><span class="sig-paren">(</span><em>visa_search_term</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/spectrum_analyzers.html#Rohde_Schwarz_FSEA_20"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.spectrum_analyzers.Rohde_Schwarz_FSEA_20" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hardware wrapper for Rohde &amp; Schwarz FSEA 20 RF Spectrum Analyzer</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>visa_search_term</strong> (<em>str</em>) – The address that is passed to
+<code class="docutils literal"><span class="pre">visa.ResourceManager().open_resource()</span></code></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="hardware.spectrum_analyzers.Rohde_Schwarz_FSEA_20.acquire">
+<code class="descname">acquire</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/spectrum_analyzers.html#Rohde_Schwarz_FSEA_20.acquire"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.spectrum_analyzers.Rohde_Schwarz_FSEA_20.acquire" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a tuple of the frequencies (Hz) and powers of the trace.
+For the resolution bandwidth, use the <code class="docutils literal"><span class="pre">rbw</span></code> property.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 

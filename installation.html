@@ -1,0 +1,172 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>&lt;no title&gt; &#8212; Digonnet Hardware 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <p>python</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">numpy</span><span class="o">.</span><span class="vm">__file__</span>
+<span class="go">‘/Users/wheelerj/miniconda3/lib/python3.5/site-packages/numpy/‘</span>
+</pre></div>
+</div>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span>$ cd /Users/wheelerj/miniconda3/lib/python3.5/site-packages/
+$ ln -s /Users/wheelerj/Dropbox/digonnet/hardware hardware
+</pre></div>
+</div>
+<p>The reason why <code class="docutils literal"><span class="pre">hardware</span></code> is repeated twice is because of the directory file structure. The github repository <code class="docutils literal"><span class="pre">hardware</span></code> contains a folder for documentation and a folder for the actual python package. When creating a symbolic link, you need to link to this directory.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>hardware/
+├── LICENSE.md
+├── README.md
+├── docs
+│   ├── Makefile
+│   ├── conf.py
+│   ├── index.rst
+│   ├── make.bat
+│   └── modules
+│       ├── data_acquisition_units.rst
+│       ├── function_generators.rst
+│       ├── gyros.rst
+│       ├── laser_diode_drivers.rst
+│       ├── lock_in_amplifiers.rst
+│       ├── optical_power_meters.rst
+│       ├── oscilloscopes.rst
+│       ├── rotation_stages.rst
+│       └── spectrum_analyzers.rst
+└── hardware
+    ├── __init__.py
+    ├── data_acquisition_units.py
+    ├── function_generators.py
+    ├── gyros.py
+    ├── laser_diode_drivers.py
+    ├── lock_in_amplifiers.py
+    ├── optical_power_meters.py
+    ├── oscilloscopes.py
+    ├── rotation_stages.py
+    └── spectrum_analyzers.py
+</pre></div>
+</div>
+<p>Note that in order to automatically load certain pieces of hardware
+in the autoimport script in <code class="docutils literal"><span class="pre">/hardware/hardware/__init__.py</span></code>,
+you need to set environment variables. These currently include:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">ROTATION_STAGE_SERVER</span></code> (URL of the rotation stage server)</li>
+<li><code class="docutils literal"><span class="pre">DEFAULT_GYRO</span></code> (absolute path of fog JSON file)</li>
+</ul>
+<p>On POSIX systems (Mac and Linux), this can be done
+by adding a line to your <code class="docutils literal"><span class="pre">.bashrc</span></code> file:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">ROTATION_STAGE_SERVER</span><span class="o">=</span><span class="s2">&quot;http://hostname.stanford.edu&quot;</span>
+</pre></div>
+</div>
+<p>On a Windows environment, type the following in the command line:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">setx</span> <span class="n">ROTATION_STAGE_SERVER</span> <span class="s2">&quot;http://hostname.stanford.edu&quot;</span>
+</pre></div>
+</div>
+<p>Then close out of the command line. In all future command lines, it will be loaded into the environment variables automatically. You can check this with <code class="docutils literal"><span class="pre">echo</span> <span class="pre">%ROTATION_STAGE_SERVER%</span></code>.</p>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules/data_acquisition_units.html">Data Acquisition Units</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/function_generators.html">Function Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/gyros.html">Fiber Optic Gyroscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/laser_diode_drivers.html">Laser Diode Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/lock_in_amplifiers.html">Lock-in Amplifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/optical_power_meters.html">Optical Power Meters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/oscilloscopes.html">Oscilloscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/rotation_stages.html">Rotation Stages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/spectrum_analyzers.html">Spectrum Analyzers</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+
+    <div class="footer">
+      &copy;2017, Jonathan Wheeler.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/installation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+<!-- Piwik -->
+<script type="text/javascript">
+  var _paq = _paq || [];
+  /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+  _paq.push(['trackPageView']);
+  _paq.push(['enableLinkTracking']);
+  (function() {
+    var u="//piwik.jamwheeler.com/";
+    _paq.push(['setTrackerUrl', u+'piwik.php']);
+    _paq.push(['setSiteId', '3']);
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+    g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+  })();
+</script>
+<!-- End Piwik Code -->
+
+  </body>
+</html>
