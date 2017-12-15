@@ -35,6 +35,11 @@ if idn in resources_dict.keys():
     awg = Agilent_33250A(resources_dict[idn])
     print('awg = %s' % idn[:-1])
 
+idn = 'HEWLETT-PACKARD,33120A,0,7.0-5.0-1.0\n'
+if idn in resources_dict.keys():
+    from .function_generators import HP_33120A
+    awg = HP_33120A(resources_dict[idn])
+    print('awg = %s' % idn[:-1])
 
 idn = 'ILX Lightwave,3724B,37243817,4.8\n'
 if idn in resources_dict.keys():
