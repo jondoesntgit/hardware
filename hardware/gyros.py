@@ -193,7 +193,7 @@ class Gyro:
         degrees_per_hour_per_volt = 1 / volt_hours_per_degree
         return degrees_per_hour_per_volt
 
-    def tombstone(self, seconds=None, minutes=None, hours=None, rate=10,
+    def tombstone(self, seconds=None, minutes=None, hours=None, rate=None,
                   autophase=False, autohome=True, scale_factor=0, sensitivity=None):
         """
         Performs a tombstone test of the gyro. The gyro records a time series
@@ -245,10 +245,12 @@ class Gyro:
 
         start = time.time()
         data = daq.read(duration, rate)
+        if not rate:
+            rate = len(data)/duration
         return Tombstone(data, rate, start=start, scale_factor=scale_factor)
 
     def get_arw(self, seconds=60, autophase=False, autohome=True,
-                scale_factor=None):
+                scale_factor=None, rate=None):
         """
         Performs a tombstone test of the gyro, but rather than returning a
         :class:`pyfog.tombstone.Tombstone` object, it returns the ARW in units
@@ -272,7 +274,9 @@ class Gyro:
         if not scale_factor:
             scale_factor = self.get_scale_factor()
 
-        data = daq.read(seconds, rate=100)
-        _, dev, _, _ = oadev(data*scale_factor, rate=100, data_type='freq',
+        data = daq.read(seconds, rate=rate)
+        if not rate:
+            rate = len(data/duration)
+        _, dev, _, _ = oadev(data*scale_factor, rate=rate, data_type='freq',
                              taus=[1])
         return dev[0]/60
