@@ -100,7 +100,7 @@ if idn in resources_dict.keys():
 if sys.platform.startswith('win'):
     from .data_acquisition_units import NI_9215
     daq = NI_9215()
-    print(daq.identify())
+    print("daq = ", daq.identify())
 
 # Load a Gyro if defined in environment variable
 # 
