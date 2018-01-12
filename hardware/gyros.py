@@ -250,8 +250,11 @@ class Gyro:
             return Tombstone(data, rate, start=start, scale_factor=scale_factor)
 
         # Assume asynchronous
-        rate = 10
-        max_duration = 24*60*60
+        if not max_duration:
+            max_duration = 24*60*60
+
+        if not rate:
+            rate = 10
         initial_values = zeros(max_duration * rate)
         initial_values.fill(nan)
 
