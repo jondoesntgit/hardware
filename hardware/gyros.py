@@ -24,11 +24,11 @@ except:
 
 from allantools import oadev
 import time
-from numpy import floor, mean, cos, pi
-from pyfog import Tombstone
+from numpy import floor, mean, cos, pi, zeros, nan, log10
+from pyfog import Tombstone, InsufficientSampleTimeError, InsufficientSamplingRateError
 import json
 import re
-
+import threading
 
 class Gyro:
     """
@@ -228,9 +228,6 @@ class Gyro:
         if hours:
             duration += hours * 3600
 
-        if not time:
-            raise ValueError("Cannot test for 0 seconds.")
-
         if autohome:
             self.home()
 
@@ -244,10 +241,30 @@ class Gyro:
             scale_factor = self.get_scale_factor(sensitivity = sensitivity)
 
         start = time.time()
-        data = daq.read(duration, rate)
+
+        if duration:
+            print('Running sync')
+            data = daq.read(duration, rate)
+            if not rate:
+                rate = len(data)/duration
+            return Tombstone(data, rate, start=start, scale_factor=scale_factor)
+
+        # Assume asynchronous
+        if not max_duration:
+            max_duration = 24*60*60
+
         if not rate:
-            rate = len(data)/duration
-        return Tombstone(data, rate, start=start, scale_factor=scale_factor)
+            rate = 10
+        initial_values = zeros(max_duration * rate)
+        initial_values.fill(nan)
+
+        tmb = Tombstone(initial_values, rate=rate, start=time.time(), scale_factor=scale_factor)
+        
+        tmb._data_thread = StoppableThread(target=self.detector, args=(tmb,), kwargs={"rate": rate, "max_duration": max_duration})
+        tmb._adev_check_thread = StoppableThread(target=self.adev_checker, args=(tmb,))
+        tmb._data_thread.start()
+        tmb._adev_check_thread.start()
+        return tmb
 
     def get_arw(self, seconds=60, autophase=False, autohome=True,
                 scale_factor=None, rate=None):
@@ -280,3 +297,56 @@ class Gyro:
         _, dev, _, _ = oadev(data*scale_factor, rate=rate, data_type='freq',
                              taus=[1])
         return dev[0]/60
+
+    def detector(self, tmb, rate, max_duration):
+        data = daq.read(1, rate, asynchronous=True)
+        i=0
+        while i < rate*max_duration:
+            data_to_add = next(data)
+            next_i = i + len(data_to_add)
+            if next_i > len(tmb): break
+            tmb.iloc[i:next_i] = data_to_add
+            i = next_i 
+            if tmb._data_thread.stopped():
+                return
+        self.notify('Reached max duration')
+        tmb.stop()
+
+        
+    def adev_checker(self, tmb, period=5, threshold=1.5):
+        """Check every {period} seconds until ADev max climbs {threshold} dB above ADev min"""
+        while True:
+            time.sleep(period)
+            if tmb._adev_check_thread.stopped():
+                return
+            try:
+                ratio = 10*log10(max(tmb.devs[tmb.drift_idx:]) / tmb.drift)
+                if ratio > threshold:
+                    self.notify('Reached ADev Min')
+                    break
+            except InsufficientSampleTimeError as iste:
+                # We expect a lot of ADev errors until we get enough data
+                pass
+            except InsufficientSamplingRateError as isre:
+                self.notify('Sampling rate too small. Cannot resolve drift')
+                break
+        tmb.stop()
+
+        
+    def notify(self, msg):
+        """Some function we can use to notify the user that a thread has finished"""
+        print(msg)
+
+class StoppableThread(threading.Thread):
+    """Thread class with a stop() method. The thread itself has to check
+    regularly for the stopped() condition."""
+
+    def __init__(self, *args, **kwargs):
+        super(StoppableThread, self).__init__(*args, **kwargs)
+        self._stop_event = threading.Event()
+
+    def stop(self):
+        self._stop_event.set()
+
+    def stopped(self):
+        return self._stop_event.is_set()
