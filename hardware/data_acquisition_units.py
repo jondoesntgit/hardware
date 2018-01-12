@@ -50,8 +50,9 @@ class NI_9215:
         self.max_voltage = max_voltage
         self.task = None
 
-    def read(self, seconds=1, rate=None, max_voltage=None, timeout=0,
-             verbose=False, oversampling_ratio=10, task_name=""):
+    def read(self, seconds, rate=None, max_voltage=None, timeout=0,
+             verbose=False, oversampling_ratio=10, task_name="", 
+             asynchronous=False):
         """
         Parameters
         ----------
@@ -85,132 +86,201 @@ class NI_9215:
             amplifier. We can reduce our noise to a theoretical limit by sampling
             at the lock-in amplifier bandwidth, and then downsampling via simple
             averages of size N.
+        task_name : str
+            A name for the task in the NI system
+        asynchronous : bool
+            Default set to false. However, if true, will allow user to perform
+            other tasks while the read runs in the background. Data can
+            be fetched in groups of chunk_sizes (specified by seconds and
+            rate) by using the ``next(g)`` syntax. This function will return
+            a generator instead of an array.
 
         Returns
         -------
         numpy.array
             A one-dimensional numpy array of the data.
+        generator
+            If asynchronous is set to true, a generator will be returned.
+            Using the ``next(g)`` syntax will yield a chunk of data of size
+            rate * seconds
         """
-        self.task = Task()
 
+        print('start read')
 
         rate = self._get_rate(rate, oversampling_ratio)
         max_voltage = self._get_max_voltage(max_voltage)
-        sample_size = int(seconds * rate * oversampling_ratio)
-        self.raw_data = numpy.zeros((sample_size,), dtype=numpy.float64)
+ 
+        print('define task')
 
-        ##############################
-        # Setup for CfgSampClkTiming #
-        ##############################
+        self.task = self.FOG_DAQ_Task(
+            self, seconds, rate, oversampling_ratio, max_voltage, asynchronous)
 
-        # the source terminal of the Sample Clock. 
-        # To use the internal clock, of the device, set to Null
-        source = ""
+        print('starting task')
+        if asynchronous:
+            self.queue = queue.Queue()
+            self.task.StartTask()
+            def gen(q):
+                while True:
+                    yield q.get()
 
-        # the sampling rate in samples per second per channel. If you use an
-        # external source for the Sample Clock, set this value to the maximum 
-        # expected rate of that clock
-        sampling_rate = rate * oversampling_ratio
+            return gen(self.queue)
 
-        # Specifies on which edge of the clock to acquire or generate samples
-        active_edge = DAQmx_Val_Rising
+        if not asynchronous:
+            self.task.StartTask()
+            self.task.run()
+            self.task.StopTask()
+            self.task.ClearTask()
+            self.task = None
+            return self.data
 
-        # Specifies whether the task acquires or generates samples 
-        # continuously or if it acquires or generates a finite number of
-        # samples.
-        sample_mode = DAQmx_Val_FiniteSamps
 
-        # The number of samples to acquire for each channel in the task.
-        # If sample mode is finite, this is the total number of samples.
-        # If sample is continuous, this is the buffer size. 
-        samps_per_channel_to_acquire = sample_size
 
-        ###########################
-        # Setup for ReadAnalogF64 #
-        ###########################
 
-        # The number of samples, per channel, to read. If read_array does not
-        # contain enough space, ReadAnalogF64 returns as many samples as fit 
-        # in read_array
-        num_samps_per_channel = sample_size
+    class FOG_DAQ_Task(Task):
+        def __init__(self, daq, seconds, rate, oversampling_ratio, max_voltage, asynchronous):
 
-        # The amount of time, in seconds, to wait for the function to read the
-        # samples. An infinite wait is specified by -1. The ReadAnalogF64 
-        # returns an error if the timeout elapses
-        if timeout == 0:
-            timeout = seconds
+            Task.__init__(self)
 
-        # Specifies whether or not the samples are interleaved
-        fill_mode = DAQmx_Val_GroupByChannel
+            self.daq = daq
+            self.max_voltage = max_voltage
+            self.oversampling_ratio = oversampling_ratio
+            self.asynchronous = asynchronous
 
-        # The array to read samples into, organized according to the filling mode
-        read_array = self.raw_data
+            sample_size = int(seconds * rate * oversampling_ratio)
+            self.raw_data = numpy.zeros((sample_size,), dtype=numpy.float64)
 
-        # The size of the array, in samples, into which samples are read
-        array_size_in_samps = sample_size
+            ##############################
+            # Setup for CfgSampClkTiming #
+            ##############################
 
-        # The actual number of samples read from each channel
-        samples_per_channel_read = byref(int32())
+            # the source terminal of the Sample Clock. 
+            # To use the internal clock, of the device, set to Null
+            source = ""
 
-        # Reserved for future use. Pass NULL to this parameter
-        reserved = None
+            # the sampling rate in samples per second per channel. If you use 
+            # an external source for the Sample Clock, set this value to the
+            # maximum expected rate of that clock
+            sampling_rate = rate * oversampling_ratio
 
-        #################################
-        # Setup for CreateAIVoltageChan #
-        #################################
+            # Specifies on which edge of the clock to acquire or generate 
+            # samples
+            active_edge = DAQmx_Val_Rising
 
-        # You can specify a list or range of channels
-        physical_channel = "%s/ai0" % self.device_name
+            # Specifies whether the task acquires or generates samples 
+            # continuously or if it acquires or generates a finite number of
+            # samples.
+            if asynchronous:
+                sample_mode = DAQmx_Val_ContSamps
+            else:
+                sample_mode = DAQmx_Val_FiniteSamps
 
-        # The name(s) to assign the created virtual channel(s). 
-        # If you do not specify a name NI-DAQmx uses the physical channel
-        # name as the virtual channel name.
-        name_to_assign_channel = ""
+            # The number of samples to acquire for each channel in the task.
+            # If sample mode is finite, this is the total number of samples.
+            # If sample is continuous, this is the buffer size. 
+            samps_per_channel_to_acquire = sample_size
 
-        # The input terminal configuration for the channel. For the NI9215, 
-        # this defaults to differential between the coax wire and sheath.
-        terminal_config = DAQmx_Val_Cfg_Default
+            #################################
+            # Setup for CreateAIVoltageChan #
+            #################################
 
-        # The minimum and maximum values you expect to detect in `units`.
-        # The lock-in-amplifier has an output range of -10 to 10 Volts, 
-        # corresponding to max and min values at its sensitivity. 
+            # You can specify a list or range of channels
+            physical_channel = "%s/ai0" % daq.device_name
 
-        min_val = -10
-        max_val = 10
+            # The name(s) to assign the created virtual channel(s). 
+            # If you do not specify a name NI-DAQmx uses the physical channel
+            # name as the virtual channel name.
+            name_to_assign_channel = ""
 
-        # The units to used to return voltage measurements
-        units = DAQmx_Val_Volts
+            # The input terminal configuration for the channel. For the 
+            # NI9215, this defaults to differential between the coax wire and 
+            # sheath.
+            terminal_config = DAQmx_Val_Cfg_Default
 
-        # If you're using voltage as your units, this should be set to None.
-        custom_scale_name = None
+            # The minimum and maximum values you expect to detect in `units`.
+            # The lock-in-amplifier has an output range of -10 to 10 Volts, 
+            # corresponding to max and min values at its sensitivity. 
 
-        #########################
-        # Configure and execute #
-        #########################
+            min_val = -10
+            max_val = 10
 
-        self.task.CreateAIVoltageChan(
-                physical_channel, name_to_assign_channel, terminal_config,
-                min_val, max_val, units, custom_scale_name)
+            # The units to used to return voltage measurements
+            units = DAQmx_Val_Volts
 
-        self.task.CfgSampClkTiming(
-                source, sampling_rate, active_edge, sample_mode, sample_size)
+            # If you're using voltage as your units, this should be set to
+            # None.
+            custom_scale_name = None
 
-        self.task.StartTask()
-        self.task.ReadAnalogF64(
-                num_samps_per_channel, timeout, DAQmx_Val_GroupByChannel, 
-                read_array, array_size_in_samps,samples_per_channel_read,
-                reserved)
+            #########################
+            # Configure #
+            #########################
 
-        self.task.StopTask()
-        self.task.ClearTask()
-        self.task = None
+            self.CreateAIVoltageChan(
+                    physical_channel, name_to_assign_channel, terminal_config,
+                    min_val, max_val, units, custom_scale_name)
 
-        # Scale
-        self.data = self.raw_data/10 * max_voltage
+            self.CfgSampClkTiming(
+                    source, sampling_rate, active_edge, sample_mode, 
+                    sample_size)
 
-        # Downsample
-        self.data = numpy.mean(self.data.reshape(-1, oversampling_ratio), axis=1)
-        return self.data
+            if asynchronous:
+                # Map EveryNCallback and DoneCallback into C callback functions
+                self.AutoRegisterEveryNSamplesEvent(DAQmx_Val_Acquired_Into_Buffer,sample_size,0, name='run')
+                self.AutoRegisterDoneEvent(0, name='finish')
+
+        def run(self):
+            ###########################
+            # Setup for ReadAnalogF64 #
+            ###########################
+
+            # The number of samples, per channel, to read. If read_array does
+            # not contain enough space, ReadAnalogF64 returns as many samples 
+            # as fit in read_array
+            num_samps_per_channel = len(self.raw_data)
+
+            # The amount of time, in seconds, to wait for the function to read
+            # the samples. An infinite wait is specified by -1. The 
+            # ReadAnalogF64 function returns an error if the timeout elapses
+            timeout = -1
+
+            # Specifies whether or not the samples are interleaved
+            fill_mode = DAQmx_Val_GroupByChannel
+
+            # The array to read samples into, organized according to the 
+            # filling mode
+            read_array = self.raw_data
+
+            # The size of the array, in samples, into which samples are read
+            array_size_in_samps = len(self.raw_data)
+
+            # The actual number of samples read from each channel
+            samples_per_channel_read = byref(int32())
+
+            # Reserved for future use. Pass NULL to this parameter
+            reserved = None
+
+            self.ReadAnalogF64(
+                    num_samps_per_channel, timeout, fill_mode, read_array, 
+                    array_size_in_samps, samples_per_channel_read, reserved)
+
+            # Scale
+            data = self.raw_data/10 * self.max_voltage
+
+            # Downsample
+            data = numpy.mean(data.reshape(-1, self.oversampling_ratio), axis=1)
+
+            if self.asynchronous:
+                self.daq.queue.put(data)
+                return 0
+            else:
+                self.daq.data = data
+
+        def finish(self, status):
+            return 0 # The function should return an integer)
+
+    def data_stream(self):
+        """A generator that returns chunks of data"""
+        while True:
+            yield self.queue.get()
 
     class CallbackTask(Task):
         def __init__(self, rate, chunk_seconds, oversampling_ratio, max_voltage, device_name, timeout):
@@ -230,23 +300,6 @@ class NI_9215:
             # Map EveryNCallback and DoneCallback into C callback functions
             self.AutoRegisterEveryNSamplesEvent(DAQmx_Val_Acquired_Into_Buffer,self.chunk_size,0)
             self.AutoRegisterDoneEvent(0)
-
-
-        def EveryNCallback(self):
-            read = int32()
-            self.ReadAnalogF64(self.chunk_size,self.timeout,DAQmx_Val_GroupByScanNumber,self.data,self.chunk_size,byref(read),None)
-            #self.a.extend(self.data.tolist())
-            self.data = self.data/10 * self.max_voltage
-            self.queue.put(numpy.mean(self.data.reshape(-1, self.oversampling_ratio), axis=1) / 10 * self.max_voltage)
-            return 0 # The function should return an integer
-        def DoneCallback(self, status):
-            print ("Status",status.value)
-            return 0 # The function should return an integer)
-
-        def data_stream(self):
-            """A generator that returns chunks of data"""
-            while True:
-                yield self.queue.get()
             
 
     def async_read(self, chunk_seconds=1, rate=None, max_voltage=None, timeout=0,
@@ -336,9 +389,10 @@ class NI_9215:
         return self.task.data_stream()
 
     def stop(self):
+        """ If running in asynchronous mode, this stops the task"""
         self.task.StopTask()
         self.task.ClearTask()
-        
+        self.task = None
 
     def identify(self):
         """
