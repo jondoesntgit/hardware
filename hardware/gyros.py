@@ -173,12 +173,12 @@ class Gyro:
         time.sleep(1)
         ccw_data = daq.read(seconds=3, rate=cal_acquisition_rate,
                             verbose=False)
-        time.sleep(2)
+        time.sleep(5)
 
         rot.cw(5, background=True)
         time.sleep(1)
         cw_data = daq.read(seconds=3, rate=cal_acquisition_rate, verbose=False)
-        time.sleep(2)
+        time.sleep(5)
 
         lia.time_constant = cal_integration_time
         lia.sensitivity = cal_sensitivity
@@ -194,7 +194,7 @@ class Gyro:
         return degrees_per_hour_per_volt
 
     def tombstone(self, seconds=None, minutes=None, hours=None, rate=None,
-                  autophase=False, autohome=True, scale_factor=0, sensitivity=None):
+                  autophase=False, autohome=True, scale_factor=0, sensitivity=None,max_duration=None):
         """
         Performs a tombstone test of the gyro. The gyro records a time series
         of rotation data when no rotation is applied to it. This data can be
