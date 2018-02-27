@@ -8,7 +8,7 @@ This changelog follows the recommendations put forth at [keepachangelong.com](ht
 
 ## [Unreleased]
 ### Added
-- Gyro objects now can have their properties accessed as if they were a list. For example: `fog['name']`, `fog['pitch']`.
+- Gyro objects now can have their properties accessed as if they were a dictionary. For example: `fog['name']`, `fog['pitch']`.
 - Gyro objects can be autoloaded from the `__init__.py` script by setting an environment variable `DEFAULT_GYRO`, which contains the absolute path to the desired gyros JSON file.
 - Gyros objects can now be returned via the `__repr__` function in `print(fog)`. This will be handy when showing them in a `Tombstone` object. 
 
