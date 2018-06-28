@@ -126,7 +126,9 @@ class SRS_SR844:
     @sensitivity.setter
     def sensitivity(self, val):
         key = [d['Vrms'] for d in self._sensitivity_dict.values()].index(val)
+            #create array of Vrms values from dictionary by iterating through values
         self.inst.write('SENS %i' % key)
+        #raise Exception if value isn't in the array (Value Error)
 
     @property
     def time_constant(self):

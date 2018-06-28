@@ -40,7 +40,7 @@ class Gyro:
             the gyro.
 
     Examples:
-        Suppose a json file ``kvothe.json`` contains the following markup 
+        Suppose a json file ``kvothe.json`` contains the following markup
         describing a gyro
         named `Kvothe`.
 
@@ -59,7 +59,7 @@ class Gyro:
 
         From here, different tests can be run on the gyro.
 
-        >>> test1 = gyro.tombstone(hours=4)
+        >>> test1 = gyro.tombstone(hours=4) #fill tombstone w data for 4 hrs?
 
     """
     def __init__(self, filepath):
@@ -123,6 +123,7 @@ class Gyro:
         time.sleep(.5)
         lia.autophase()
 
+        #return variables to initial condition
         rot.velocity = tmp_velocity
         lia.sensitivity = tmp_sensitivity
         rot.wait_until_motor_is_idle()
@@ -159,7 +160,7 @@ class Gyro:
         # integration
         cal_integration_time = lia.time_constant
         lia.time_constant = 0.01
-        
+
         # set the rotation speed and store the current
         # rotation speed
         cal_velocity = rot.velocity
@@ -180,6 +181,7 @@ class Gyro:
         cw_data = daq.read(seconds=3, rate=cal_acquisition_rate, verbose=False)
         time.sleep(5)
 
+        #return vars to original state
         lia.time_constant = cal_integration_time
         lia.sensitivity = cal_sensitivity
         rot.velocity = cal_velocity
@@ -187,8 +189,8 @@ class Gyro:
         if not pitch:
             pitch = float(self.data.get('pitch', 0))
 
-        volt_seconds_per_degree = (mean(ccw_data) - mean(cw_data))/2\
-            / cos(pitch * pi / 180)
+        volt_seconds_per_degree = ((mean(ccw_data) - mean(cw_data))/2
+            / cos(pitch * pi / 180))
         volt_hours_per_degree = volt_seconds_per_degree / 3600
         degrees_per_hour_per_volt = 1 / volt_hours_per_degree
         return degrees_per_hour_per_volt
@@ -259,7 +261,7 @@ class Gyro:
         initial_values.fill(nan)
 
         tmb = Tombstone(initial_values, rate=rate, start=time.time(), scale_factor=scale_factor)
-        
+
         tmb._data_thread = StoppableThread(target=self.detector, args=(tmb,), kwargs={"rate": rate, "max_duration": max_duration})
         tmb._adev_check_thread = StoppableThread(target=self.adev_checker, args=(tmb,))
         tmb._data_thread.start()
@@ -299,20 +301,23 @@ class Gyro:
         return dev[0]/60
 
     def detector(self, tmb, rate, max_duration):
+        #will create another thread to run in backgroud?
         data = daq.read(1, rate, asynchronous=True)
         i=0
         while i < rate*max_duration:
             data_to_add = next(data)
             next_i = i + len(data_to_add)
+            #if the tombstone fills up
             if next_i > len(tmb): break
+            #adds to tombstone?
             tmb.iloc[i:next_i] = data_to_add
-            i = next_i 
+            i = next_i
             if tmb._data_thread.stopped():
                 return
         self.notify('Reached max duration')
         tmb.stop()
 
-        
+
     def adev_checker(self, tmb, period=5, threshold=1.5):
         """Check every {period} seconds until ADev max climbs {threshold} dB above ADev min"""
         while True:
@@ -332,7 +337,7 @@ class Gyro:
                 break
         tmb.stop()
 
-        
+
     def notify(self, msg):
         """Some function we can use to notify the user that a thread has finished"""
         print(msg)
