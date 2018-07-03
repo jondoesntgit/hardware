@@ -252,6 +252,7 @@ class Gyro:
         # Assume asynchronous
         if not max_duration:
             max_duration = 24*60*60
+            print("Running for a maximum of 24 hours")
 
         if not rate:
             rate = 10
