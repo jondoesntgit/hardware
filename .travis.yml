@@ -1,0 +1,5 @@
+language: python
+python: 
+  - "3.6"
+script:
+  - "sh ./tests/all_tests.sh"
