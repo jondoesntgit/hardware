@@ -19,7 +19,6 @@ Arbitrary waveform generators and function generators can be imported by
 import visa
 import numpy as np
 import from pint import UnitRegistry
-import pint
 
 class FunctionGenerator:
     def __init__(self, visa_search_term):
@@ -27,13 +26,36 @@ class FunctionGenerator:
         self.inst = rm.open_resource(visa_search_term)
         self.ureg = UnitRegistry()
 
-# Link to manual: http://www.ece.mtu.edu/labs/EElabs/EE3306/Revisions_2008/agt33250aman.pdf
 
+    def identify(self):
+        """
+        Returns:
+            str: the response from the ``*IDN?`` GPIB query.
+        """
+        return self.inst.query('*IDN?')[:-1]
+
+    @property
+    def frequency(self):
+        f = self.inst.query('FREQ?')
+        return float(f) * self.ureg.hertz
+
+    @setter
+    def frequency(self, command, value):
+        self.inst.write(command + str(value))
+
+    @property
+    def volt(self, q):
+        return float(self.inst.query(q)) * self.ureg.volts
+
+    @setter
+    def volt(self, command, value):
+        self.inst.write(command + str(value))
+
+# gathering up reused code in superclass and making these subclasses of that
+# Link to manual: http://www.ece.mtu.edu/labs/EElabs/EE3306/Revisions_2008/agt33250aman.pdf
 # Returning just a float vs. returning an actual pint.Quantity
 
-
-
-class Agilent_33250A(): #same
+class Agilent_33250A():
     """
     Hardware wrapper for the Agilent 33250A Arbitrary Waveform Generator
 
