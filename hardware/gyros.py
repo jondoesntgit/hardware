@@ -120,12 +120,12 @@ class Gyro:
         lia.sensitivity = sensitivity
         start_angle = rot.angle
         rot.ccw(2, background=True)
-        time.sleep(.5)
+        time.sleep(1)
         lia.autophase()
 
         rot.velocity = tmp_velocity
         lia.sensitivity = tmp_sensitivity
-        rot.wait_until_motor_is_idle()
+        time.sleep(3)
         rot.angle = start_angle
 
     def get_scale_factor(self, sensitivity=None, velocity=1, pitch=None):
@@ -169,13 +169,13 @@ class Gyro:
         cal_acquisition_rate = floor(1/cal_integration_time) # should this be 1/(3*integration time)??
 
         # start acquisition and store the calibrated data
-        rot.ccw(5, background=True)
+        rot.ccw(velocity * 4.5, background=True)
         time.sleep(1)
         ccw_data = daq.read(seconds=3, rate=cal_acquisition_rate,
                             verbose=False)
         time.sleep(5)
 
-        rot.cw(5, background=True)
+        rot.cw(velocity * 4.5, background=True)
         time.sleep(1)
         cw_data = daq.read(seconds=3, rate=cal_acquisition_rate, verbose=False)
         time.sleep(5)
@@ -188,7 +188,7 @@ class Gyro:
             pitch = float(self.data.get('pitch', 0))
 
         volt_seconds_per_degree = (mean(ccw_data) - mean(cw_data))/2\
-            / cos(pitch * pi / 180)
+            / cos(pitch * pi / 180) / velocity
         volt_hours_per_degree = volt_seconds_per_degree / 3600
         degrees_per_hour_per_volt = 1 / volt_hours_per_degree
         return degrees_per_hour_per_volt
