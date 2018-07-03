@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python hello_world.py
+python ./tests/hello_world.py
