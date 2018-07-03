@@ -321,7 +321,7 @@ class Gyro:
             rate = len(data/duration)
         _, dev, _, _ = oadev(data*scale_factor, rate=rate, data_type='freq',
                              taus=[1])
-        return dev[0]/60
+        return dev[0]/60 #dev[0] = noise (see graph) --> given in degrees
 
     def detector(self, tmb, rate, max_duration):
         #will create another thread to run in backgroud?
@@ -332,7 +332,7 @@ class Gyro:
             next_i = i + len(data_to_add)
             #if the tombstone fills up
             if next_i > len(tmb): break
-            #adds to tombstone?
+            #adds to tombstone
             tmb.iloc[i:next_i] = data_to_add
             i = next_i
             if tmb._data_thread.stopped():

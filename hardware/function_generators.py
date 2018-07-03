@@ -18,9 +18,14 @@ Arbitrary waveform generators and function generators can be imported by
 
 import visa
 import numpy as np
+import from pint import UnitRegistry
 import pint
 
-# gathering up reused code in superclass and making these subclasses of that
+class FunctionGenerator:
+    def __init__(self, visa_search_term):
+        rm = visa.ResourceManager()
+        self.inst = rm.open_resource(visa_search_term)
+        self.ureg = UnitRegistry()
 
 # Link to manual: http://www.ece.mtu.edu/labs/EElabs/EE3306/Revisions_2008/agt33250aman.pdf
 
@@ -115,9 +120,11 @@ class Agilent_33250A(): #same
             'SIN', 'SQU', 'RAMP', 'PULS', 'NOIS', 'DC', 'USER'
         ]
         if val.upper() in (waveform_list):
+            #don't need returns
             return self.inst.write('FUNC %s' % val)
 
         elif val.upper()[0:4] == 'USER':
+            #don't need return
             return self.inst.write('FUNC:%s' % val)
         else:
             raise Exception('%s is not a recognized waveform' % val)
@@ -159,7 +166,7 @@ class Agilent_33250A(): #same
         self.upload(points_array)
         self.save_as(waveform_name)
 
-
+# link to user manual: http://www.thinksrs.com/downloads/pdfs/manuals/DS345m.pdf
 class SRS_DS345():
     """
     Hardware wrapper for the Stanford Research Systems DS345
@@ -218,6 +225,17 @@ class SRS_DS345():
 
     @voltage.setter
     def voltage(self, val):
+# list of the max and mins of all the voltages you can have based on the waves
+# set boundaries on voltage inputs
+#             Vpp        Vrms            dBm (50Ω)
+# Function Max. Min.   Max.   Min.     Max.     Min.
+# Sine     10V  10 mV  3.54V  3.54 mV  +23.98  -36.02
+# Square   10V  10 mV  5V     5 mV     +26.99   -33.0
+# Triangle 10V  10 mV  2.89V  2.89 mV  +22.22  -37.78
+# Ramp    10V   10 mV  2.89V  2.89 mV  +22.22  -37.78
+# Noise   10V   10 mV  2.09V  2.09 mV  +19.41 -40.59
+# Arbitrary 10V 10 mV  n.a.  n.a.      n.a.   n.a.
+
         self.inst.write('AMPL %f' % val)
 
     # alias
@@ -298,9 +316,11 @@ class HP_33120A(): #same
     def phase(self):
         return float(self.inst.query('PHAS?')) * self.ureg.degree
 
+
     @phase.setter
     def phase(self, val):
         self.inst.write('PHAS %f' % val)
+
 
     @property
     def duty_cycle(self):
@@ -366,42 +386,3 @@ class HP_33120A(): #same
         """
         self.upload(points_array)
         self.save_as(waveform_name)
-
-
-
-
-
-# class FunctionGenerator:
-#
-#     def __init__(self, visa_search_term):
-#         rm = visa.ResourceManager()
-#         self.inst = rm.open_resource(visa_search_term)
-#         self.ureg = pint.UnitRegistry()
-#
-#     def identify(self):
-#         """
-#         Returns:
-#             str: the response from the ``*IDN?`` GPIB query.
-#         """
-#         return self.inst.query('*IDN?')[:-1]
-#
-#
-#     @property
-#     def frequency(self):
-#         f = self.inst.query('FREQ?')
-#         return float(f) * self.ureg.hertz
-#
-#
-#     @setter
-#     def frequency(self, command):
-#         self.inst.write(command)
-#
-#
-#     @property
-#     def volt(self, q):
-#         return float(self.inst.query(q)) * self.ureg.volt
-#
-#
-#     @setter
-#     def volt(self, command):
-#         self.inst.write(command)

@@ -129,6 +129,8 @@ class SRS_SR844:
     def sensitivity(self, val):
         key = [d['Vrms'] for d in self._sensitivity_dict.values()].index(val)
             #create array of Vrms values from dictionary by iterating through values
+            #from the values we are only looking at those w [Vrms] key
+            #if find the Vrms key index, that index is the sensitivity
         self.inst.write('SENS %i' % key)
         #raise Exception if value isn't in the array (Value Error)
 
