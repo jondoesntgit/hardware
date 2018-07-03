@@ -53,6 +53,31 @@ class NSC_A1:
     def angle(self, val):
         requests.get(self.hostname + '/rot/angle/%f' % val)
 
+    def stop(self):
+        r = requests.get(self.hostname + '/rot/stop')
+        return r.json()
+
+    @property
+    def max_angle(self):
+        r = requests.get(self.hostname + '/rot/max_angle')
+        return r.json()['max_angle']
+
+    @max_angle.setter
+    def max_angle(self, val):
+        requests.get(self.hostname + '/rot/max_angle/%f' % val)
+
+    @property
+    def min_angle(self):
+        r = requests.get(self.hostname + '/rot/min_angle')
+        return r.json()['min_angle']
+
+    @min_angle.setter
+    def min_angle(self, val):
+        requests.get(self.hostname + '/rot/min_angle/%f' % val)
+
+    def reset(self):
+        requests.get(self.hostname + '/rot/reset')
+
     def cw(self, val, background=False):
         """
         Rotates clockwise through a specified angle.
