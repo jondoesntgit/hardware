@@ -29,6 +29,8 @@ from pyfog import Tombstone, InsufficientSampleTimeError, InsufficientSamplingRa
 import json
 import re
 import threading
+import asyncio
+import pint
 
 class Gyro:
     """
@@ -85,6 +87,7 @@ class Gyro:
             if 'radius' in self.data:
                 self.diameter = self.data['radius'] * 2
                 self.radius = self.data['radius']
+        self.ureg = pint.UnitRegistry()
 
     def __repr__(self):
         return "Gyro('%s')" % self.filepath
@@ -162,6 +165,7 @@ class Gyro:
         lia.time_constant = 0.01
 
         # set the rotation speed and store the current
+        # keep
         # rotation speed
         cal_velocity = rot.velocity
         rot.velocity = velocity
@@ -170,21 +174,40 @@ class Gyro:
         cal_acquisition_rate = floor(1/cal_integration_time) # should this be 1/(3*integration time)??
 
         # start acquisition and store the calibrated data
-        rot.ccw(5, background=True)
-        time.sleep(1)
-        ccw_data = daq.read(seconds=3, rate=cal_acquisition_rate,
-                            verbose=False)
-        time.sleep(5)
 
-        rot.cw(5, background=True)
-        time.sleep(1)
-        cw_data = daq.read(seconds=3, rate=cal_acquisition_rate, verbose=False)
-        time.sleep(5)
+        def rotate(direction, seconds):
+            rot.rotate(direction, background = True)
 
-        #return vars to original state
-        lia.time_constant = cal_integration_time
-        lia.sensitivity = cal_sensitivity
-        rot.velocity = cal_velocity
+        async def measure(seconds)
+            time.sleep(1)
+            await daq.read(seconds-2)
+            # sum_of_vals += daq.read(seconds-2)? <--if it's returning the next
+            # value read on the queue instead of the generator?
+
+
+        loop = asyncio.get_event_loop()
+        __, cw_data = loop.run_until_complete(asyncio.gather(rotate("cw", seconds), measure(seconds)))
+        __, ccw_data = loop.run_until_complete(asyncio.gather(rotate("ccw", seconds), measure(seconds)))
+
+        return ( mean(cw_data) - mean(ccw_data) ) / seconds
+
+        # rot.ccw(5, background=True)
+        # time.sleep(1)
+        # ccw_data = daq.read(seconds=3, rate=cal_acquisition_rate,
+        #                     verbose=False)
+        # time.sleep(5)
+        #
+        # rot.cw(5, background=True)
+        # time.sleep(1)
+        # cw_data = daq.read(seconds=3, rate=cal_acquisition_rate, verbose=False)
+        # time.sleep(5)
+        #
+        # lia.time_constant = cal_integration_time
+        # lia.sensitivity = cal_sensitivity
+        # rot.velocity = cal_velocity
+
+        # def get_scale_factor(seconds): # should also contain velocity
+
 
         if not pitch:
             pitch = float(self.data.get('pitch', 0))
@@ -193,7 +216,7 @@ class Gyro:
             / cos(pitch * pi / 180))
         volt_hours_per_degree = volt_seconds_per_degree / 3600
         degrees_per_hour_per_volt = 1 / volt_hours_per_degree
-        return degrees_per_hour_per_volt
+        return degrees_per_hour_per_volt * ureg.degree/ureg.hour/ureg.volt
 
     def tombstone(self, seconds=None, minutes=None, hours=None, rate=None,
                   autophase=False, autohome=True, scale_factor=0, sensitivity=None,max_duration=None):

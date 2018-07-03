@@ -50,6 +50,25 @@ class NI_9215:
         self.max_voltage = max_voltage
         self.task = None
 
+    #define two different read functions, one async and one sync
+    """
+    async def read(self, seconds, rate=None, max_voltage=None, timeout=0,
+             verbose=False, oversampling_ratio=10, task_name=""):
+        rate = self._get_rate(rate, oversampling_ratio)
+        max_voltage = self._get_max_voltage(max_voltage)
+
+
+        self.task = self.FOG_DAQ_Task(
+            self, seconds, rate, oversampling_ratio, max_voltage, asynchronous)
+
+        self.queue = asyncio.Queue()
+        # self.task.StartTask()
+        # while True:
+        #     yield (await self.queue.get())
+
+
+    """
+
     def read(self, seconds, rate=None, max_voltage=None, timeout=0,
              verbose=False, oversampling_ratio=10, task_name="",
              asynchronous=False):
@@ -121,6 +140,11 @@ class NI_9215:
                     yield q.get()
 
             return gen(self.queue)
+
+            # self.queue = asyncio.Queue()
+            # self.task.StartTask()
+            # while True:
+            #     yield (await self.queue.get())
 
         if not asynchronous:
             self.task.StartTask()

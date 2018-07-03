@@ -18,7 +18,7 @@ Laser diode drivers can be imported by
 """
 
 import visa
-
+import pint
 
 class ILX_Lightwave_3724B():
     """
@@ -35,10 +35,10 @@ class ILX_Lightwave_3724B():
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
-
-    @property
+        self.ureg = pint.UnitRegistry()
+        
     def current(self):
-        return float(self.inst.query('LAS:LDI?')[:-1])
+        return float(self.inst.query('LAS:LDI?')[:-1]) * self.ureg.amp
 
     @current.setter
     def current(self, val):

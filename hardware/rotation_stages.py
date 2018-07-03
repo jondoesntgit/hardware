@@ -7,7 +7,7 @@ Rotation Stages
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
 
 This module provides support for connecting to a rotation stage server.
-The code for the rotation stage server is hosted in a private repo for 
+The code for the rotation stage server is hosted in a private repo for
 security via obscurity. A rotation_stage client object can be created by
 
 >>> import hardware
@@ -43,7 +43,7 @@ class NSC_A1:
     @property
     def velocity(self):
         r = requests.get(self.hostname + '/rot/velocity')
-        return r.json()['velocity']        
+        return r.json()['velocity']
 
     @velocity.setter
     def velocity(self, val):
@@ -52,6 +52,12 @@ class NSC_A1:
     @angle.setter
     def angle(self, val):
         requests.get(self.hostname + '/rot/angle/%f' % val)
+
+    def rotate(self, direction, background=False):
+        if(direction.lower() == "cw" or direction.lower() == "clockwise"):
+            self.cw()
+        elif(direction.lower()=="ccw" or direction.lower()== "counterclockwise"):
+            self.ccw()
 
     def cw(self, val, background=False):
         """
@@ -68,7 +74,7 @@ class NSC_A1:
             threading.Thread(target=worker, args=(self.hostname + '/rot/cw/%f' % val,)).start()
         else:
             requests.get(self.hostname + '/rot/cw/%f' % val )
-        
+
     def ccw(self, val, background=False):
         """
         Rotates counterclockwise through a specified angle.

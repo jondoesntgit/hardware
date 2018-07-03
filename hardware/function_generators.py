@@ -18,9 +18,17 @@ Arbitrary waveform generators and function generators can be imported by
 
 import visa
 import numpy as np
+import pint
+
+# gathering up reused code in superclass and making these subclasses of that
+
+# Link to manual: http://www.ece.mtu.edu/labs/EElabs/EE3306/Revisions_2008/agt33250aman.pdf
+
+# Returning just a float vs. returning an actual pint.Quantity
 
 
-class Agilent_33250A():
+
+class Agilent_33250A(): #same
     """
     Hardware wrapper for the Agilent 33250A Arbitrary Waveform Generator
 
@@ -38,44 +46,49 @@ class Agilent_33250A():
             the 10 MHz reference clock.
         duty_cycle (float): The duty cycle of the square wave form in percent.
     """
+
     def __init__(self, visa_search_term):
-        rm = visa.ResourceManager()
-        self.inst = rm.open_resource(visa_search_term)
-
-    def identify(self):
-        """
-        Returns:
-            str: the response from the ``*IDN?`` GPIB query.
-        """
-        return self.inst.query('*IDN?')[:-1]
-
-    @property
-    def frequency(self):
-        f = self.inst.query('FREQ?')
-        return float(f)
+         rm = visa.ResourceManager()
+         self.inst = rm.open_resource(visa_search_term)
+         self.ureg = pint.UnitRegistry()
 
     @frequency.setter
     def frequency(self, val):
+
+        #max and min values taken from user manual
+        if(val<1e-6):
+            raise ValueError("Minimum frequency is 1µHz")
+        elif((waveform_name == "SIN" or waveform_name=="SQU") and
+             value>80e6)
+            raise ValueError("Max frequency is 80 MHz for %s waves" % waveform_name)
+        elif(waveform_name=="PULS" and (val<500e-6 or val>50e6))
+            raise ValueError("Frequency must be between 500 µHz and 50 MHz for pulse waves")
         self.inst.write('FREQ %i' % val)
+
+    @property
+    def frequency(self):
+        return float(self.inst.query('FREQ?')) * self.ureg.hertz
 
     # alias
     freq = frequency
 
     @property
     def volt(self):
-        return float(self.inst.query('VOLT?'))
+        return float(self.inst.query('VOLT?')) * self.ureg.volt
 
     @volt.setter
     def volt(self, val):
-        string = 'VOLT %f' % float(val)
-        self.inst.write(string)
+        self.inst.write('VOLT %i' %val)
 
     # alias
     voltage = volt
 
     @property
     def phase(self):
-        return float(self.inst.query('PHAS?'))
+        unit = self.inst.query('UNIT:ANGL?')
+        if("RAD" in unit):
+            return float(self.inst.query('PHAS?')) * self.ureg.radian
+        return float(self.inst.query('PHAS?')) * self.ureg.degree
 
     @phase.setter
     def phase(self, val):
@@ -159,8 +172,10 @@ class SRS_DS345():
     Attributes:
         frequency (float): The frequency in Hz. Also aliases to ``freq``
         voltage (float): The peak-to-peak voltage in volts. Also aliases to
-        ``volt`` waveform (str):  A string in the array
+        ``volt``
+        waveform (str):  A string in the array
             ``['SIN', 'SQU', 'RAMP', 'PULS', 'NOIS', 'DC', 'USER' ]``
+
         phase (float): The relative phase to other instruments synced through
         the 10 MHz reference clock.
         duty_cycle (float): The duty cycle of the square wave form in percent.
@@ -168,6 +183,7 @@ class SRS_DS345():
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
+        self.ureg = pint.UnitRegistry()
 
     def identify(self):
         """
@@ -178,12 +194,19 @@ class SRS_DS345():
 
     @property
     def frequency(self):
-        f = self.inst.query('FREQ?')
-
-        return float(f)
+        return float(self.inst.query('FREQ?')) * self.ureg.hertz
 
     @frequency.setter
     def frequency(self, val):
+        if(self.waveform_name == "NOIS"):
+            raise ValueError("Frequency must remain at 10 MHz when waveform is 'NOISE'")
+        elif(val<1e-6):
+            raise ValueError("Minimum frequency is 1 µHz")
+        elif((self.waveform_name == "SIN" or self.waveform_name == "SQ") and
+              val>30.2e6):
+            raise ValueError("Maximum frequency is 30.2 MHz for %s waves" % waveform_name)
+        elif(self.waveform_name == "RAMP" and val>1e5):
+            raise ValueError("Maximum frequency is 100 KHz for ramp waves")
         self.inst.write('FREQ %i' % val)
 
     # alias
@@ -191,7 +214,7 @@ class SRS_DS345():
 
     @property
     def voltage(self):
-        return float(self.inst.query('AMPL?')[:-3])
+        return float(self.inst.query('AMPL?')[:-3]) * self.ureg.volt
 
     @voltage.setter
     def voltage(self, val):
@@ -202,13 +225,15 @@ class SRS_DS345():
 
     @property
     def phase(self):
-        return float(self.inst.query('PHSE?'))
+        return float(self.inst.query('PHSE?')) * self.ureg.degree
 
     @phase.setter
     def phase(self, val):
+        if(self.waveform_name == "NOIS" ):
+            raise Exception("Can't set phase when waveform is 'NOISE'")
         self.inst.write('PHSE %f' % val)
 
-class HP_33120A():
+class HP_33120A(): #same
     """
     Hardware wrapper for the HP 33120A Arbitrary Waveform Generator
 
@@ -222,6 +247,7 @@ class HP_33120A():
             `volt``
         waveform (str):  A string in the array
             ``['SIN', 'SQU', 'RAMP', 'PULS', 'NOIS', 'DC', 'USER' ]``
+
         phase (float): The relative phase to other instruments synced through
             the 10 MHz reference clock.
         duty_cycle (float): The duty cycle of the square wave form in percent.
@@ -229,6 +255,7 @@ class HP_33120A():
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
+        self.ureg = pint.UnitRegistry()
 
     def identify(self):
         """
@@ -239,11 +266,17 @@ class HP_33120A():
 
     @property
     def frequency(self):
-        f = self.inst.query('FREQ?')
-        return float(f)
+        return float(self.inst.query('FREQ?')) * self.ureg.hertz
 
     @frequency.setter
     def frequency(self, val):
+        if(val<100e-6):
+            raise ValueError("Minimum frequency is 100 µHz")
+        elif((waveform_name == "SIN" or waveform_name == "SQU") and val>15e6):
+            raise ValueError("Maximum frequency is 15 MHz for %s waves" % waveform_name)
+        elif(waveform_name=="RAMP" and val>100e3):
+            raise ValueError("Maximum frequency is 100 KHz for ramp waves")
+
         self.inst.write('FREQ %i' % val)
 
     # alias
@@ -251,7 +284,7 @@ class HP_33120A():
 
     @property
     def volt(self):
-        return float(self.inst.query('VOLT?'))
+        return float(self.inst.query('VOLT?')) * self.ureg.volt
 
     @volt.setter
     def volt(self, val):
@@ -263,7 +296,7 @@ class HP_33120A():
 
     @property
     def phase(self):
-        return float(self.inst.query('PHAS?'))
+        return float(self.inst.query('PHAS?')) * self.ureg.degree
 
     @phase.setter
     def phase(self, val):
@@ -333,3 +366,42 @@ class HP_33120A():
         """
         self.upload(points_array)
         self.save_as(waveform_name)
+
+
+
+
+
+# class FunctionGenerator:
+#
+#     def __init__(self, visa_search_term):
+#         rm = visa.ResourceManager()
+#         self.inst = rm.open_resource(visa_search_term)
+#         self.ureg = pint.UnitRegistry()
+#
+#     def identify(self):
+#         """
+#         Returns:
+#             str: the response from the ``*IDN?`` GPIB query.
+#         """
+#         return self.inst.query('*IDN?')[:-1]
+#
+#
+#     @property
+#     def frequency(self):
+#         f = self.inst.query('FREQ?')
+#         return float(f) * self.ureg.hertz
+#
+#
+#     @setter
+#     def frequency(self, command):
+#         self.inst.write(command)
+#
+#
+#     @property
+#     def volt(self, q):
+#         return float(self.inst.query(q)) * self.ureg.volt
+#
+#
+#     @setter
+#     def volt(self, command):
+#         self.inst.write(command)

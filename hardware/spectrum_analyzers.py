@@ -19,6 +19,7 @@ Spectrum analyzers can be imported by
 
 import visa
 import numpy as np
+import pint
 
 
 class ANDO_AQ6317B:
@@ -32,6 +33,7 @@ class ANDO_AQ6317B:
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
+        self.ureg = pint.UnitRegistry()
 
     def identify(self):
         """
@@ -67,7 +69,8 @@ class ANDO_AQ6317B:
         wavelength = np.array(wavelength_string[:-2].split(','))
         wavelength = wavelength.astype(np.float)[2:]
 
-        return wavelength, power
+        return wavelength * ureg.nanometer, power * ureg.watt
+        #power can be dBm
 
     # Alias
     acquire = get_spectrum
@@ -84,10 +87,11 @@ class Rohde_Schwarz_FSEA_20:
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
+        self.ureg = pint.UnitRegistry()
 
     @property
     def center(self):
-        float(self.inst.query('FREQ:CENT?'))
+        float(self.inst.query('FREQ:CENT?')) * self.ureg.hertz
 
     @center.setter
     def center(self, Hz):
@@ -95,7 +99,7 @@ class Rohde_Schwarz_FSEA_20:
 
     @property
     def span(self):
-        return float(self.inst.query('FREQ:SPAN?'))
+        return float(self.inst.query('FREQ:SPAN?')) *self.ureg.hertz
 
     @span.setter
     def span(self, Hz):
@@ -111,7 +115,7 @@ class Rohde_Schwarz_FSEA_20:
 
     @property
     def start(self):
-        return float(self.inst.query('FREQ:STAR?'))
+        return float(self.inst.query('FREQ:STAR?')) *self.ureg.hertz
 
     @start.setter
     def start(self, Hz):
@@ -119,7 +123,7 @@ class Rohde_Schwarz_FSEA_20:
 
     @property
     def stop(self):
-        return float(self.inst.query('FREQ:STOP?'))
+        return float(self.inst.query('FREQ:STOP?')) * self.ureg.hertz
 
     @stop.setter
     def stop(self, Hz):
@@ -127,7 +131,7 @@ class Rohde_Schwarz_FSEA_20:
 
     @property
     def time(self):
-        return float(self.inst.query('SWEEP:TIME?'))
+        return float(self.inst.query('SWEEP:TIME?')) * self.ureg.second
 
     @time.setter
     def time(self, seconds):

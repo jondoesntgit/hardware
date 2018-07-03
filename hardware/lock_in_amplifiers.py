@@ -18,6 +18,7 @@ Lock-in amplifiers can be imported by
 """
 
 import visa
+import pint
 
 
 class SRS_SR844:
@@ -38,6 +39,7 @@ class SRS_SR844:
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
+        self.ureg = pint.UnitRegistry()
 
         self._sensitivity_dict = {
             0: {"Vrms": 100e-9, "dBm": -127},
@@ -121,7 +123,7 @@ class SRS_SR844:
     @property
     def sensitivity(self):
         key = int(self.inst.query('SENS?'))
-        return self._sensitivity_dict[key]['Vrms']
+        return self._sensitivity_dict[key]['Vrms'] * self.ureg.volt
 
     @sensitivity.setter
     def sensitivity(self, val):
@@ -133,7 +135,7 @@ class SRS_SR844:
     @property
     def time_constant(self):
         key = int(self.inst.query('OFLT?'))
-        return self._time_constant_list[key]
+        return self._time_constant_list[key] * self.ureg.second
 
     @time_constant.setter
     def time_constant(self, val):

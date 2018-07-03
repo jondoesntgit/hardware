@@ -18,6 +18,7 @@ Optical power meters can be loaded by
 """
 
 import visa
+import pint
 
 
 class Newport_1830_C():
@@ -34,6 +35,7 @@ class Newport_1830_C():
     def __init__(self, address):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(address)
+        self.ureg = pint.UnitRegistry()
 
     def identify(self):
         """
@@ -44,4 +46,4 @@ class Newport_1830_C():
 
     @property
     def power(self):
-        return float(self.inst.query('D?')[:-1])
+        return float(self.inst.query('D?')[:-1]) * self.ureg.watt
