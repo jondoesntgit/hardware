@@ -313,7 +313,7 @@ class Gyro:
         tmb.stop()
 
         
-    def adev_checker(self, tmb, period=5, threshold=1.5):
+    def adev_checker(self, tmb, period=5, threshold=5):
         """Check every {period} seconds until ADev max climbs {threshold} dB above ADev min"""
         while True:
             time.sleep(period)
