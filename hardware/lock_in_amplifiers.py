@@ -18,8 +18,54 @@ Lock-in amplifiers can be imported by
 """
 
 import visa
-import pint
+from hardware import u
+import random
 
+class MockLockInAmplifier:
+
+    def __init__(self, instr_name = None):
+        if not instr_name:
+            self.name = "Lock In Amplifier - SRS_SR844"
+        else:
+            self.name = instr_name
+
+        self._sensitivity_dict = {
+                0: {"Vrms": 100e-9, "dBm": -127},
+                1: {"Vrms": 300e-9, "dBm": -117},
+                2: {"Vrms": 1e-6, "dBm": -107},
+                3: {"Vrms": 3e-6, "dBm": -97},
+                4: {"Vrms": 10e-6, "dBm": -87},
+                5: {"Vrms": 30e-6, "dBm": -77},
+            }
+
+            # see page 115 of manual
+        self._time_constant_list = [  # query by index
+                100e-6,
+                300e-6,
+                1e-3,
+                3e-3,
+                10e-3,
+            ]
+
+
+    def identify(self):
+        return self.name
+
+    @property
+    def phase(self):
+        return random.randint(1, 361) * u.degree
+
+    @property
+    def time_constant(self):
+        key = random.randint(0, len(self._time_constant_list))
+        self._time_constant = self._time_constant_list[key]
+        return self._time_constant * u.second
+
+
+    @property
+    def sensitivity(self):
+        key = random.randint(0, len(self._sensitivity_dict))
+        return self._sensitivity_dict[key]['Vrms'] * u.volt
 
 class SRS_SR844:
     """
@@ -31,7 +77,7 @@ class SRS_SR844:
 
     Attributes:
         phase (float): The phase between the input and the reference signals in
-            radians.
+            degrees.
         sensitivity (float): The sensitivity of the lock-in amplifer in volts.
         time_constant (float): The time constant for the lock-in amplifier
             filter.
@@ -39,7 +85,6 @@ class SRS_SR844:
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
-        self.ureg = pint.UnitRegistry()
 
         self._sensitivity_dict = {
             0: {"Vrms": 100e-9, "dBm": -127},
@@ -114,7 +159,7 @@ class SRS_SR844:
 
     @property
     def phase(self):
-        return float(self.inst.query('PHAS?')[:-1])
+        return float(self.inst.query('PHAS?')[:-1]) *u.degree
 
     @phase.setter
     def phase(self, val):
@@ -123,7 +168,7 @@ class SRS_SR844:
     @property
     def sensitivity(self):
         key = int(self.inst.query('SENS?'))
-        return self._sensitivity_dict[key]['Vrms'] * self.ureg.volt
+        return self._sensitivity_dict[key]['Vrms'] * u.volt
 
     @sensitivity.setter
     def sensitivity(self, val):
@@ -131,13 +176,15 @@ class SRS_SR844:
             #create array of Vrms values from dictionary by iterating through values
             #from the values we are only looking at those w [Vrms] key
             #if find the Vrms key index, that index is the sensitivity
+        if key not in self._sensitivity_dict:
+            raise ValueError("Not a valid sensitivity")
         self.inst.write('SENS %i' % key)
         #raise Exception if value isn't in the array (Value Error)
 
     @property
     def time_constant(self):
         key = int(self.inst.query('OFLT?'))
-        return self._time_constant_list[key] * self.ureg.second
+        return self._time_constant_list[key] * u.second
 
     @time_constant.setter
     def time_constant(self, val):
