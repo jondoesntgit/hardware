@@ -1,12 +1,16 @@
 language: python
 python: 
   - "3.6"
+install:
+  - pip install -v .
+  - pip install -r requirements.txt
+  - pip install coveralls
 script:
-  - pytest
   - coverage run --source hardware setup.py test
+  - coverage report -m
+  - coveralls
 after_success:
   - "cd docs && make html"
-  - coveralls
 deploy:
   provider: pages
   skip-cleanup: true
