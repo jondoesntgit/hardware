@@ -8,6 +8,8 @@ Fiber Optic Gyroscopes
       optic gyroscopes.
 
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
+.. moduleauthor:: Anjali Thontakudi
+
 """
 
 
@@ -30,7 +32,29 @@ import json
 import re
 import threading
 import asyncio
-import pint
+import random
+from hardware import u
+
+class MockGyro:
+    def __init__(self, instr_name = None):
+        if not instr_name:
+            self.name = "Gyroscope"
+        else:
+            self.name = instr_name
+        self.data = {"name": self.name,
+                     "radius": random.randint(1, 5) * u.inches,
+                     "length": random.randint(1, 10) * u.inch,
+                     "pitch": random.randint(1, 30) * u.degree,
+                    }
+
+    def identify(self):
+        return self.data["name"]
+
+    def get_item(self, key):
+        return self.data[key]
+
+    def rotate(self):
+        print("Rotating")
 
 class Gyro:
     """
@@ -87,7 +111,6 @@ class Gyro:
             if 'radius' in self.data:
                 self.diameter = self.data['radius'] * 2
                 self.radius = self.data['radius']
-        self.ureg = pint.UnitRegistry()
 
     def __repr__(self):
         return "Gyro('%s')" % self.filepath
