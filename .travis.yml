@@ -2,9 +2,11 @@ language: python
 python: 
   - "3.6"
 script:
-  - "sh ./tests/all_tests.sh"
+  - pytest
+  - coverage run --source hardware setup.py test
 after_success:
   - "cd docs && make html"
+  - coveralls
 deploy:
   provider: pages
   skip-cleanup: true

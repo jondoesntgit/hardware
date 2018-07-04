@@ -1,6 +1,7 @@
 # Python Hardware Wrappers
 
 [![Build Status](https://travis-ci.org/jondoesntgit/hardware.svg?branch=master)](https://travis-ci.org/jondoesntgit/hardware)
+[![Coverage Status](https://coveralls.io/repos/github/jondoesntgit/hardware/badge.svg?branch=master)](https://coveralls.io/github/jondoesntgit/hardware?branch=master)
 
 This repository contains python wrappers that can be used to access hardware
 commonly used inside of the Digonnet lab at Stanford. For more documentation,
