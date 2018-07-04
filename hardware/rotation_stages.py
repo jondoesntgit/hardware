@@ -5,6 +5,7 @@ Rotation Stages
 .. module:: rotation_stages
 
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
+.. moduleauthor:: Anjali Thontakudi
 
 This module provides support for connecting to a rotation stage server.
 The code for the rotation stage server is hosted in a private repo for
@@ -18,6 +19,39 @@ security via obscurity. A rotation_stage client object can be created by
 import requests
 import json
 import threading
+from hardware import u
+import random
+
+class MockRotationStage:
+    def __init__(self, instr_name = None):
+        if not instr_name:
+            self.name = "Rotation Stage - NSC A1"
+        else:
+            self.name = instr_name
+        self._angle = random.randint(1, 361) * u.degree
+        self._velocity = random.randint(1, 10) * u.degree/u.second
+
+    def identify(self):
+        return self.name
+
+    @property
+    def angle(self):
+        return self._angle
+
+    @angle.setter
+    def angle(self, value):
+        self._angle = value * u.degree
+
+    @property
+    def velocity(self):
+        return self._velocity
+
+    @velocity.setter
+    def velocity(self, val):
+        self._velocity = val * u.degree/u.second
+
+    def rotate(self):
+        print("Rotating")
 
 
 class NSC_A1:
@@ -38,12 +72,12 @@ class NSC_A1:
     @property
     def angle(self):
         r = requests.get(self.hostname + '/rot/angle')
-        return r.json()['angle']
+        return r.json()['angle'] * u.degree
 
     @property
     def velocity(self):
         r = requests.get(self.hostname + '/rot/velocity')
-        return r.json()['velocity']
+        return r.json()['velocity'] * u.degree/u.second
 
     @velocity.setter
     def velocity(self, val):
