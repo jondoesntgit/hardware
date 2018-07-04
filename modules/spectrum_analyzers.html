@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>&lt;no title&gt; &#8212; Digonnet Hardware 0.0.1 documentation</title>
+    <title>Spectrum Analyzers &#8212; Digonnet Hardware 0.0.1 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -16,7 +16,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="prev" title="&lt;no title&gt;" href="rotation_stages.html" />
+    <link rel="prev" title="Rotation Stages" href="rotation_stages.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -33,7 +33,112 @@
 
           <div class="body" role="main">
             
-  
+  <span class="target" id="module-hardware.spectrum_analyzers"></span><div class="section" id="module-spectrum_analyzers">
+<span id="spectrum-analyzers"></span><h1>Spectrum Analyzers<a class="headerlink" href="#module-spectrum_analyzers" title="Permalink to this headline">¶</a></h1>
+<p>This module provides support for controlling spectrum analyzers with Python.
+Spectrum analyzers can be imported by</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">hardware</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lia</span> <span class="o">=</span> <span class="n">hardware</span><span class="o">.</span><span class="n">spectrum_analyzers</span><span class="o">.</span><span class="n">ANDO_AQ6317B</span><span class="p">(</span><span class="s1">&#39;GPIB0:...&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="hardware.spectrum_analyzers.ANDO_AQ6317B">
+<em class="property">class </em><code class="descclassname">hardware.spectrum_analyzers.</code><code class="descname">ANDO_AQ6317B</code><span class="sig-paren">(</span><em>visa_search_term</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/spectrum_analyzers.html#ANDO_AQ6317B"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.spectrum_analyzers.ANDO_AQ6317B" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hardware wrapper for ANDO AQ6317B Optical Spectrum Analyzer</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>visa_search_term</strong> (<em>str</em>) – The address that is passed to
+<code class="docutils literal notranslate"><span class="pre">visa.ResourceManager().open_resource()</span></code></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="hardware.spectrum_analyzers.ANDO_AQ6317B.acquire">
+<code class="descname">acquire</code><span class="sig-paren">(</span><em>channel='B'</em><span class="sig-paren">)</span><a class="headerlink" href="#hardware.spectrum_analyzers.ANDO_AQ6317B.acquire" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the measured spectrum from a single reading of the instrument.
+Aliases to acquire</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><em>tuple of arrays</em> –     The first array contains the wavelengths in nanometers.
+The second array contains the optical power in dBm.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.spectrum_analyzers.ANDO_AQ6317B.get_spectrum">
+<code class="descname">get_spectrum</code><span class="sig-paren">(</span><em>channel='B'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/spectrum_analyzers.html#ANDO_AQ6317B.get_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.spectrum_analyzers.ANDO_AQ6317B.get_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the measured spectrum from a single reading of the instrument.
+Aliases to acquire</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><em>tuple of arrays</em> –     The first array contains the wavelengths in nanometers.
+The second array contains the optical power in dBm.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.spectrum_analyzers.ANDO_AQ6317B.identify">
+<code class="descname">identify</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/spectrum_analyzers.html#ANDO_AQ6317B.identify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.spectrum_analyzers.ANDO_AQ6317B.identify" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><em>str</em> – The response from an <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> GPIB query.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hardware.spectrum_analyzers.ANDO_AQ6317B.set_timeout">
+<code class="descname">set_timeout</code><span class="sig-paren">(</span><em>milliseconds</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/spectrum_analyzers.html#ANDO_AQ6317B.set_timeout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.spectrum_analyzers.ANDO_AQ6317B.set_timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the timeout of the instrument in milliseconds.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>milliseconds</strong> (<em>float</em>) – The timeout in milliseconds</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="hardware.spectrum_analyzers.Rohde_Schwarz_FSEA_20">
+<em class="property">class </em><code class="descclassname">hardware.spectrum_analyzers.</code><code class="descname">Rohde_Schwarz_FSEA_20</code><span class="sig-paren">(</span><em>visa_search_term</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/spectrum_analyzers.html#Rohde_Schwarz_FSEA_20"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.spectrum_analyzers.Rohde_Schwarz_FSEA_20" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hardware wrapper for Rohde &amp; Schwarz FSEA 20 RF Spectrum Analyzer</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>visa_search_term</strong> (<em>str</em>) – The address that is passed to
+<code class="docutils literal notranslate"><span class="pre">visa.ResourceManager().open_resource()</span></code></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="hardware.spectrum_analyzers.Rohde_Schwarz_FSEA_20.acquire">
+<code class="descname">acquire</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hardware/spectrum_analyzers.html#Rohde_Schwarz_FSEA_20.acquire"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hardware.spectrum_analyzers.Rohde_Schwarz_FSEA_20.acquire" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a tuple of the frequencies (Hz) and powers of the trace.
+For the resolution bandwidth, use the <code class="docutils literal notranslate"><span class="pre">rbw</span></code> property.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
 
           </div>
           
@@ -42,6 +147,16 @@
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <h3><a href="../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Modules</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="function_generators.html">Function Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="laser_diode_drivers.html">Laser Diode Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lock_in_amplifiers.html">Lock-in Amplifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optical_power_meters.html">Optical Power Meters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oscilloscopes.html">Oscilloscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rotation_stages.html">Rotation Stages</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Spectrum Analyzers</a></li>
+</ul>
 
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>

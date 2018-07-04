@@ -1,0 +1,538 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>hardware.function_generators &#8212; Digonnet Hardware 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for hardware.function_generators</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Function Generators</span>
+<span class="sd">===================</span>
+
+<span class="sd">.. module:: function_generators</span>
+<span class="sd">   :platform: Windows, Linux, OSX</span>
+<span class="sd">   :synopsis: Python wrappers for function generators</span>
+
+<span class="sd">.. moduleauthor:: Jonathan Wheeler &lt;jamwheel@stanford.edu&gt;</span>
+
+<span class="sd">This module provides support for controlling function generators with Python.</span>
+<span class="sd">Arbitrary waveform generators and function generators can be imported by</span>
+
+<span class="sd">&gt;&gt;&gt; import hardware</span>
+<span class="sd">&gt;&gt;&gt; awg = hardware.function_generators.Agilent_33250A(&#39;GPIB0:...&#39;)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">visa</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="Agilent_33250A"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.Agilent_33250A">[docs]</a><span class="k">class</span> <span class="nc">Agilent_33250A</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hardware wrapper for the Agilent 33250A Arbitrary Waveform Generator</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        visa_search_term (str): The address that is passed to</span>
+<span class="sd">            ``visa.ResourceManager().open_resource()``</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        frequency (float): The frequency in Hz. Also aliases to ``freq``</span>
+<span class="sd">        voltage (float): The peak-to-peak voltage in volts. Also aliases to</span>
+<span class="sd">            `volt``</span>
+<span class="sd">        waveform (str):  A string in the array</span>
+<span class="sd">            ``[&#39;SIN&#39;, &#39;SQU&#39;, &#39;RAMP&#39;, &#39;PULS&#39;, &#39;NOIS&#39;, &#39;DC&#39;, &#39;USER&#39; ]``</span>
+<span class="sd">        phase (float): The relative phase to other instruments synced through</span>
+<span class="sd">            the 10 MHz reference clock.</span>
+<span class="sd">        duty_cycle (float): The duty cycle of the square wave form in percent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">visa_search_term</span><span class="p">):</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="n">visa</span><span class="o">.</span><span class="n">ResourceManager</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span> <span class="o">=</span> <span class="n">rm</span><span class="o">.</span><span class="n">open_resource</span><span class="p">(</span><span class="n">visa_search_term</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Agilent_33250A.identify"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.Agilent_33250A.identify">[docs]</a>    <span class="k">def</span> <span class="nf">identify</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: the response from the ``*IDN?`` GPIB query.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;*IDN?&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FREQ?&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="nd">@frequency</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FREQ </span><span class="si">%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+    <span class="c1"># alias</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">frequency</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">volt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;VOLT?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@volt</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">volt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;VOLT </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+
+    <span class="c1"># alias</span>
+    <span class="n">voltage</span> <span class="o">=</span> <span class="n">volt</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">phase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;PHAS?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@phase</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">phase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;PHAS </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">duty_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FUNCtion:SQUare:DCYCLe?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@duty_cycle</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">duty_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FUNCtion:SQUare:DCYCLe </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">wf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FUNC?&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">wf</span> <span class="o">==</span> <span class="s1">&#39;USER&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;USER &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FUNC:USER?&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">wf</span>
+
+    <span class="nd">@waveform</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="n">waveform_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;SIN&#39;</span><span class="p">,</span> <span class="s1">&#39;SQU&#39;</span><span class="p">,</span> <span class="s1">&#39;RAMP&#39;</span><span class="p">,</span> <span class="s1">&#39;PULS&#39;</span><span class="p">,</span> <span class="s1">&#39;NOIS&#39;</span><span class="p">,</span> <span class="s1">&#39;DC&#39;</span><span class="p">,</span> <span class="s1">&#39;USER&#39;</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">val</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="n">waveform_list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FUNC </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">val</span><span class="o">.</span><span class="n">upper</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;USER&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FUNC:</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> is not a recognized waveform&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Agilent_33250A.upload"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.Agilent_33250A.upload">[docs]</a>    <span class="k">def</span> <span class="nf">upload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points_array</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uploads an array of points to the function generator volatile memory.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            points_array (array-like): The waveform shape</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">points_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points_array</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">points_array</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Array is not numeric&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">points_array</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">min</span><span class="p">(</span><span class="n">points_array</span><span class="p">)</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Values should be floats between -1 and +1&#39;</span><span class="p">)</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">points_array</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;DATA VOLATILE, </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">values</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">set_duty_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">rise_time_over_cycle_time</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fall_time_over_cycle_time</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">pyfog.waveforms</span> <span class="k">import</span> <span class="n">square_pulse</span>
+        <span class="n">signal</span> <span class="o">=</span> <span class="n">square_pulse</span><span class="p">(</span>
+            <span class="mf">4e3</span><span class="p">,</span>
+            <span class="n">duty_cycle</span> <span class="o">=</span> <span class="n">r</span><span class="p">,</span>
+            <span class="n">rise_time_over_cycle_time</span> <span class="o">=</span> <span class="n">rise_time_over_cycle_time</span><span class="p">,</span>
+            <span class="n">fall_time_over_cycle_time</span> <span class="o">=</span> <span class="n">fall_time_over_cycle_time</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">__timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="mf">10e3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upload_as</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="s1">&#39;PULSEWAVEFORM&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span> <span class="o">=</span> <span class="s1">&#39;USER&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span> <span class="o">=</span> <span class="s1">&#39;USER PULSEWAVEFORM&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">__timeout</span>
+
+    <span class="k">def</span> <span class="nf">set_double_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">duty_cycle</span><span class="o">=.</span><span class="mi">50</span><span class="p">,</span> <span class="n">rise_time_over_cycle_time</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fall_time_over_cycle_time</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">pyfog.waveforms</span> <span class="k">import</span> <span class="n">square_pulse</span>
+        <span class="n">signal1</span> <span class="o">=</span> <span class="n">square_pulse</span><span class="p">(</span>
+            <span class="mf">2e3</span><span class="p">,</span>
+            <span class="n">duty_cycle</span> <span class="o">=</span> <span class="n">r1</span><span class="p">,</span>
+            <span class="n">rise_time_over_cycle_time</span> <span class="o">=</span> <span class="n">rise_time_over_cycle_time</span><span class="p">,</span>
+            <span class="n">fall_time_over_cycle_time</span> <span class="o">=</span> <span class="n">fall_time_over_cycle_time</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">signal2</span> <span class="o">=</span> <span class="n">square_pulse</span><span class="p">(</span>
+            <span class="mf">2e3</span><span class="p">,</span>
+            <span class="n">duty_cycle</span> <span class="o">=</span> <span class="n">r2</span><span class="p">,</span>
+            <span class="n">rise_time_over_cycle_time</span> <span class="o">=</span> <span class="n">rise_time_over_cycle_time</span><span class="p">,</span>
+            <span class="n">fall_time_over_cycle_time</span> <span class="o">=</span> <span class="n">fall_time_over_cycle_time</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">signal1</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">signal1</span><span class="p">,</span> <span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="mf">2e3</span><span class="o">*</span><span class="n">r1</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">signal2</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">signal2</span><span class="p">,</span> <span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="mf">2e3</span><span class="o">*</span><span class="n">r2</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+
+        <span class="n">signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">signal1</span><span class="p">,</span> <span class="n">signal2</span><span class="p">])</span>
+
+        <span class="n">__timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="mf">10e3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upload_as</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="s1">&#39;PULSEWAVEFORM&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span> <span class="o">=</span> <span class="s1">&#39;USER&#39;</span>
+<span class="c1">#        self.waveform = &#39;USER PULSEWAVEFORM&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">__timeout</span>
+
+    <span class="k">def</span> <span class="nf">set_double_gate_no_roll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">rise_time_over_cycle_time</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fall_time_over_cycle_time</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">pyfog.waveforms</span> <span class="k">import</span> <span class="n">square_pulse</span>
+        <span class="n">signal1</span> <span class="o">=</span> <span class="n">square_pulse</span><span class="p">(</span>
+            <span class="mf">2e3</span><span class="p">,</span>
+            <span class="n">duty_cycle</span> <span class="o">=</span> <span class="n">r1</span><span class="p">,</span>
+            <span class="n">rise_time_over_cycle_time</span> <span class="o">=</span> <span class="n">rise_time_over_cycle_time</span><span class="p">,</span>
+            <span class="n">fall_time_over_cycle_time</span> <span class="o">=</span> <span class="n">fall_time_over_cycle_time</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">signal2</span> <span class="o">=</span> <span class="n">square_pulse</span><span class="p">(</span>
+            <span class="mf">2e3</span><span class="p">,</span>
+            <span class="n">duty_cycle</span> <span class="o">=</span> <span class="n">r2</span><span class="p">,</span>
+            <span class="n">rise_time_over_cycle_time</span> <span class="o">=</span> <span class="n">rise_time_over_cycle_time</span><span class="p">,</span>
+            <span class="n">fall_time_over_cycle_time</span> <span class="o">=</span> <span class="n">fall_time_over_cycle_time</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">signal1</span><span class="p">,</span> <span class="n">signal2</span><span class="p">])</span>
+
+        <span class="n">__timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="mf">10e3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upload_as</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="s1">&#39;PULSEWAVEFORM&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span> <span class="o">=</span> <span class="s1">&#39;USER&#39;</span>
+<span class="c1">#        self.waveform = &#39;USER PULSEWAVEFORM&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">__timeout</span>
+
+    <span class="k">def</span> <span class="nf">set_double_gate_and_notch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">r3</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span>  <span class="n">rise_time_over_cycle_time</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fall_time_over_cycle_time</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">pyfog.waveforms</span> <span class="k">import</span> <span class="n">square_pulse</span>
+        <span class="n">signal1</span> <span class="o">=</span> <span class="n">square_pulse</span><span class="p">(</span>
+            <span class="mf">2e3</span><span class="p">,</span>
+            <span class="n">duty_cycle</span> <span class="o">=</span> <span class="n">r1</span><span class="p">,</span>
+            <span class="n">rise_time_over_cycle_time</span> <span class="o">=</span> <span class="n">rise_time_over_cycle_time</span><span class="p">,</span>
+            <span class="n">fall_time_over_cycle_time</span> <span class="o">=</span> <span class="n">fall_time_over_cycle_time</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">signal2</span> <span class="o">=</span> <span class="n">square_pulse</span><span class="p">(</span>
+            <span class="mf">2e3</span><span class="p">,</span>
+            <span class="n">duty_cycle</span> <span class="o">=</span> <span class="n">r2</span><span class="p">,</span>
+            <span class="n">rise_time_over_cycle_time</span> <span class="o">=</span> <span class="n">rise_time_over_cycle_time</span><span class="p">,</span>
+            <span class="n">fall_time_over_cycle_time</span> <span class="o">=</span> <span class="n">fall_time_over_cycle_time</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">signal1</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">signal1</span><span class="p">,</span> <span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="mf">2e3</span><span class="o">*</span><span class="n">r1</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">signal2</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">signal2</span><span class="p">,</span> <span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="mf">2e3</span><span class="o">*</span><span class="n">r2</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+
+        <span class="n">signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">signal1</span><span class="p">,</span> <span class="n">signal2</span><span class="p">])</span>
+
+        <span class="n">signal3</span> <span class="o">=</span> <span class="n">square_pulse</span><span class="p">(</span>
+            <span class="mf">4e3</span><span class="p">,</span> <span class="n">duty_cycle</span><span class="o">=</span><span class="n">r3</span>
+        <span class="p">)</span>
+        <span class="n">signal3</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">signal3</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">phase</span><span class="o">/</span><span class="mi">360</span><span class="o">*</span><span class="mf">4e3</span><span class="p">))</span>
+
+        <span class="n">__timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="mf">10e3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upload_as</span><span class="p">(</span><span class="n">signal</span> <span class="o">*</span> <span class="n">signal3</span><span class="p">,</span> <span class="s1">&#39;PULSEWAVEFORM&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span> <span class="o">=</span> <span class="s1">&#39;USER&#39;</span>
+<span class="c1">#        self.waveform = &#39;USER PULSEWAVEFORM&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">__timeout</span>
+
+<div class="viewcode-block" id="Agilent_33250A.save_as"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.Agilent_33250A.save_as">[docs]</a>    <span class="k">def</span> <span class="nf">save_as</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">waveform_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Saves the data in volatile memory as ``waveform_name``</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            waveform_name (str): The name of the saved waveform</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;DATA:COPY </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">waveform_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Agilent_33250A.upload_as"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.Agilent_33250A.upload_as">[docs]</a>    <span class="k">def</span> <span class="nf">upload_as</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points_array</span><span class="p">,</span> <span class="n">waveform_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uploads an array of points to the function generator, and</span>
+<span class="sd">        saves them by name ``waveform_name``</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            points_array (array-like): The waveform shape</span>
+<span class="sd">            waveform_name (str): The variable name to store in the waveform</span>
+<span class="sd">                generator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upload</span><span class="p">(</span><span class="n">points_array</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_as</span><span class="p">(</span><span class="n">waveform_name</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="SRS_DS345"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.SRS_DS345">[docs]</a><span class="k">class</span> <span class="nc">SRS_DS345</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hardware wrapper for the Stanford Research Systems DS345</span>
+<span class="sd">    Arbitrary Waveform Generator</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        visa_search_term (str): The address that is passed to</span>
+<span class="sd">            ``visa.ResourceManager().open_resource()``</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        frequency (float): The frequency in Hz. Also aliases to ``freq``</span>
+<span class="sd">        voltage (float): The peak-to-peak voltage in volts. Also aliases to</span>
+<span class="sd">        ``volt`` waveform (str):  A string in the array</span>
+<span class="sd">            ``[&#39;SIN&#39;, &#39;SQU&#39;, &#39;RAMP&#39;, &#39;PULS&#39;, &#39;NOIS&#39;, &#39;DC&#39;, &#39;USER&#39; ]``</span>
+<span class="sd">        phase (float): The relative phase to other instruments synced through</span>
+<span class="sd">        the 10 MHz reference clock.</span>
+<span class="sd">        duty_cycle (float): The duty cycle of the square wave form in percent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">visa_search_term</span><span class="p">):</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="n">visa</span><span class="o">.</span><span class="n">ResourceManager</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span> <span class="o">=</span> <span class="n">rm</span><span class="o">.</span><span class="n">open_resource</span><span class="p">(</span><span class="n">visa_search_term</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SRS_DS345.identify"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.SRS_DS345.identify">[docs]</a>    <span class="k">def</span> <span class="nf">identify</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: the response from the ``*IDN?`` GPIB query.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;*IDN?&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FREQ?&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="nd">@frequency</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FREQ </span><span class="si">%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+    <span class="c1"># alias</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">frequency</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;AMPL?&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
+
+    <span class="nd">@voltage</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;AMPL </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+    <span class="c1"># alias</span>
+    <span class="n">volt</span> <span class="o">=</span> <span class="n">voltage</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">phase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;PHSE?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@phase</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">phase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;PHSE </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HP_33120A"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.HP_33120A">[docs]</a><span class="k">class</span> <span class="nc">HP_33120A</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hardware wrapper for the HP 33120A Arbitrary Waveform Generator</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        visa_search_term (str): The address that is passed to</span>
+<span class="sd">            ``visa.ResourceManager().open_resource()``</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        frequency (float): The frequency in Hz. Also aliases to ``freq``</span>
+<span class="sd">        voltage (float): The peak-to-peak voltage in volts. Also aliases to</span>
+<span class="sd">            `volt``</span>
+<span class="sd">        waveform (str):  A string in the array</span>
+<span class="sd">            ``[&#39;SIN&#39;, &#39;SQU&#39;, &#39;RAMP&#39;, &#39;PULS&#39;, &#39;NOIS&#39;, &#39;DC&#39;, &#39;USER&#39; ]``</span>
+<span class="sd">        phase (float): The relative phase to other instruments synced through</span>
+<span class="sd">            the 10 MHz reference clock.</span>
+<span class="sd">        duty_cycle (float): The duty cycle of the square wave form in percent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">visa_search_term</span><span class="p">):</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="n">visa</span><span class="o">.</span><span class="n">ResourceManager</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span> <span class="o">=</span> <span class="n">rm</span><span class="o">.</span><span class="n">open_resource</span><span class="p">(</span><span class="n">visa_search_term</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HP_33120A.identify"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.HP_33120A.identify">[docs]</a>    <span class="k">def</span> <span class="nf">identify</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: the response from the ``*IDN?`` GPIB query.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;*IDN?&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FREQ?&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="nd">@frequency</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FREQ </span><span class="si">%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+    <span class="c1"># alias</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">frequency</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">volt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;VOLT?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@volt</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">volt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;VOLT </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+
+    <span class="c1"># alias</span>
+    <span class="n">voltage</span> <span class="o">=</span> <span class="n">volt</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">phase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;PHAS?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@phase</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">phase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;PHAS </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">duty_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FUNCtion:SQUare:DCYCLe?&#39;</span><span class="p">))</span>
+
+    <span class="nd">@duty_cycle</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">duty_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FUNCtion:SQUare:DCYCLe </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">wf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FUNC?&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">wf</span> <span class="o">==</span> <span class="s1">&#39;USER&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;USER &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;FUNC:USER?&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">wf</span>
+
+    <span class="nd">@waveform</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="n">waveform_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;SIN&#39;</span><span class="p">,</span> <span class="s1">&#39;SQU&#39;</span><span class="p">,</span> <span class="s1">&#39;RAMP&#39;</span><span class="p">,</span> <span class="s1">&#39;PULS&#39;</span><span class="p">,</span> <span class="s1">&#39;NOIS&#39;</span><span class="p">,</span> <span class="s1">&#39;DC&#39;</span><span class="p">,</span> <span class="s1">&#39;USER&#39;</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">val</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="n">waveform_list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FUNC </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">val</span><span class="o">.</span><span class="n">upper</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;USER&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;FUNC:</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> is not a recognized waveform&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HP_33120A.upload"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.HP_33120A.upload">[docs]</a>    <span class="k">def</span> <span class="nf">upload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points_array</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uploads an array of points to the function generator volatile memory.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            points_array (array-like): The waveform shape</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">points_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points_array</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">points_array</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Array is not numeric&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">points_array</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">min</span><span class="p">(</span><span class="n">points_array</span><span class="p">)</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Values should be floats between -1 and +1&#39;</span><span class="p">)</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">points_array</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;DATA VOLATILE, </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">values</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HP_33120A.save_as"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.HP_33120A.save_as">[docs]</a>    <span class="k">def</span> <span class="nf">save_as</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">waveform_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Saves the data in volatile memory as ``waveform_name``</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            waveform_name (str): The name of the saved waveform</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;DATA:COPY </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">waveform_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HP_33120A.upload_as"><a class="viewcode-back" href="../../modules/function_generators.html#hardware.function_generators.HP_33120A.upload_as">[docs]</a>    <span class="k">def</span> <span class="nf">upload_as</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points_array</span><span class="p">,</span> <span class="n">waveform_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uploads an array of points to the function generator, and</span>
+<span class="sd">        saves them by name ``waveform_name``</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            points_array (array-like): The waveform shape</span>
+<span class="sd">            waveform_name (str): The variable name to store in the waveform</span>
+<span class="sd">                generator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upload</span><span class="p">(</span><span class="n">points_array</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_as</span><span class="p">(</span><span class="n">waveform_name</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/function_generators.html">Function Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/laser_diode_drivers.html">Laser Diode Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/lock_in_amplifiers.html">Lock-in Amplifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/optical_power_meters.html">Optical Power Meters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/oscilloscopes.html">Oscilloscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/rotation_stages.html">Rotation Stages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/spectrum_analyzers.html">Spectrum Analyzers</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+
+    <div class="footer">
+      &copy;2017, Jonathan Wheeler.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+<!-- Piwik -->
+<script type="text/javascript">
+  var _paq = _paq || [];
+  /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+  _paq.push(['trackPageView']);
+  _paq.push(['enableLinkTracking']);
+  (function() {
+    var u="//piwik.jamwheeler.com/";
+    _paq.push(['setTrackerUrl', u+'piwik.php']);
+    _paq.push(['setSiteId', '3']);
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+    g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+  })();
+</script>
+<!-- End Piwik Code -->
+
+  </body>
+</html>
