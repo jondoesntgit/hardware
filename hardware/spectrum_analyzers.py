@@ -8,20 +8,92 @@ Spectrum Analyzers
    :synopsis: Python wrappers for lock-in amplifiers
 
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
+.. moduleauthor:: Anjali Thontakudi
 
 This module provides support for controlling spectrum analyzers with Python.
 Spectrum analyzers can be imported by
 
 >>> import hardware
->>> lia = hardware.spectrum_analyzers.ANDO_AQ6317B('GPIB0:...')
+>>> lia = hardware.spectrum_analyzers.ANDO_AQ6317B('GPIB0:.. .')
 
 """
 
 import visa
 import numpy as np
-import pint
+from hardware import u
+class MockSpectrumAnalyzer:
+    def __init__(self, instr_name = None):
+        if not instr_name:
+            self.name = "Spectrum Analyzer - Rohde Schwarz FSEA 20"
+        else:
+            self.name = instr_name
+        self._start = 50 * u.hertz
+        self._stop = 100 * u.hertz
+        self._center = 75 *u.hertz
+        self._span = 50 *u.hertz
+        self._sweep_time = 20 *u.second
+        self._reference = 5 * u.watt
+        self._bandwidth = 2 *u.hertz
 
+    def identify(self):
+        return self.name
 
+    @property
+    def start(self):
+        return self._start
+
+    @start.setter
+    def start(self, value):
+        self._start = value * u.hertz
+
+    @property
+    def stop(self):
+        return self._stop
+
+    @stop.setter
+    def stop(self, val):
+        self._stop = val * u.hertz
+
+    @property
+    def center(self):
+        return self._center
+
+    @center.setter
+    def center(self, val):
+        self._center = val * u.hertz
+
+    @property
+    def span(self):
+        return self._span
+
+    @span.setter
+    def span(self, value):
+        self._span = value * u.hertz
+
+    @property
+    def sweep_time(self):
+        return self._sweep_time
+
+    @sweep_time.setter
+    def sweep_time(self, val):
+        self._sweep_time = val * u.second
+
+    @property
+    def reference(self):
+        return self._reference
+
+    @reference.setter
+    def reference(self, value):
+        self._reference = value * u.watt
+
+    @property
+    def bandwidth(self):
+        return self._bandwidth
+
+    @bandwidth.setter
+    def bandwidth(self, val):
+        self._bandwidth = val * u.hertz
+        
 class ANDO_AQ6317B:
     """
     Hardware wrapper for ANDO AQ6317B Optical Spectrum Analyzer
@@ -33,7 +105,6 @@ class ANDO_AQ6317B:
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
-        self.ureg = pint.UnitRegistry()
 
     def identify(self):
         """
@@ -87,11 +158,10 @@ class Rohde_Schwarz_FSEA_20:
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
-        self.ureg = pint.UnitRegistry()
 
     @property
     def center(self):
-        float(self.inst.query('FREQ:CENT?')) * self.ureg.hertz
+        float(self.inst.query('FREQ:CENT?')) * u.hertz
 
     @center.setter
     def center(self, Hz):
@@ -99,7 +169,7 @@ class Rohde_Schwarz_FSEA_20:
 
     @property
     def span(self):
-        return float(self.inst.query('FREQ:SPAN?')) *self.ureg.hertz
+        return float(self.inst.query('FREQ:SPAN?')) *u.hertz
 
     @span.setter
     def span(self, Hz):
@@ -115,7 +185,7 @@ class Rohde_Schwarz_FSEA_20:
 
     @property
     def start(self):
-        return float(self.inst.query('FREQ:STAR?')) *self.ureg.hertz
+        return float(self.inst.query('FREQ:STAR?')) *u.hertz
 
     @start.setter
     def start(self, Hz):
@@ -123,7 +193,7 @@ class Rohde_Schwarz_FSEA_20:
 
     @property
     def stop(self):
-        return float(self.inst.query('FREQ:STOP?')) * self.ureg.hertz
+        return float(self.inst.query('FREQ:STOP?')) * u.hertz
 
     @stop.setter
     def stop(self, Hz):
@@ -131,7 +201,7 @@ class Rohde_Schwarz_FSEA_20:
 
     @property
     def time(self):
-        return float(self.inst.query('SWEEP:TIME?')) * self.ureg.second
+        return float(self.inst.query('SWEEP:TIME?')) * u.second
 
     @time.setter
     def time(self, seconds):
