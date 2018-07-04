@@ -19,7 +19,27 @@ import ctypes
 from ctypes import byref
 import queue
 import time
+from hardware import u
 
+class MockDAQ:
+
+    def __init__(self, instr_name = None):
+        if not instr_name:
+            self.name = "DAQ -NI9215 "
+        else:
+            self.name = instr_name
+
+    def identify(self):
+        return self.name
+
+    def read(self, rate = 5, timeout = 5):
+        self.data = list()
+        for x in range(0, rate*timeout):
+            self.data.append(random.randint(0, 10))
+        return self.data
+
+    def stop(self):
+        print("Stopped")
 
 class NI_9215:
     """
@@ -344,7 +364,7 @@ class NI_9215:
             # used the passed max_voltage
             return max_voltage
         elif self.max_voltage:
-            return self.max_voltage
+            return self.max_voltage * u.volt
         else:
             from hardware import lia
-            return lia.sensitivity
+            return lia.sensitivity * u.volt
