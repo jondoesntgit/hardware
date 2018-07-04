@@ -7,6 +7,7 @@ Function Generators
    :synopsis: Python wrappers for function generators
 
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
+.. moduleauthor:: Anjali Thontakudi
 
 This module provides support for controlling function generators with Python.
 Arbitrary waveform generators and function generators can be imported by
@@ -18,13 +19,66 @@ Arbitrary waveform generators and function generators can be imported by
 
 import visa
 import numpy as np
-import from pint import UnitRegistry
+
+from hardware import u
+
+class MockFunctionGenerator:
+
+    def __init__(self, instr_name = None):
+        if not instr_name:
+            self.name = "AWG - Agilent_33250A"
+        else:
+            self.name = instr_name
+        self._frequency = 3 * u.hertz
+        self._voltage = 1 *u.volt
+        self.waveforms = ['SIN', 'SQU', 'RAMP', 'PULS', 'NOIS', 'DC', 'USER']
+        self._phase = 20 * u.degree
+        self._duty_cycle = 50 #as a percent
+
+    def identify(self):
+        return self.name
+
+    @property
+    def frequency(self):
+        return self._frequency
+
+    @frequency.setter
+    def frequency(self, val):
+        self._frequency = val * u.hertz
+
+    @property
+    def voltage(self):
+        return self._voltage
+
+    @voltage.setter
+    def voltage(self, val):
+        self._voltage = val *u.volt
+
+    @property
+    def waveform_name(self):
+        index = random.randint(0, 7)
+        return self.waveforms[index]
+
+    @property
+    def phase(self):
+        return self._phase
+
+    @phase.setter
+    def phase(self, val):
+        self._phase = val * u.degree
+
+    @property
+    def duty_cycle(self):
+        return self._duty_cycle
+
+    @duty_cycle.setter
+    def duty_cycle(self, val):
+        self._duty_cycle = val
 
 class FunctionGenerator:
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
-        self.ureg = UnitRegistry()
 
 
     def identify(self):
@@ -34,28 +88,38 @@ class FunctionGenerator:
         """
         return self.inst.query('*IDN?')[:-1]
 
+    # properties are not polymorphic, so they must be redefined in subclasses
+    # consider removing frequency/voltage property methods??
+    # https://stackoverflow.com/questions/237432/python-properties-and-inheritance
+
     @property
     def frequency(self):
         f = self.inst.query('FREQ?')
-        return float(f) * self.ureg.hertz
+        return float(f) * u.hertz
 
-    @setter
-    def frequency(self, command, value):
-        self.inst.write(command + str(value))
+    # def get_frequency(self):
+    #     f = self.inst.query('FREQ?')
+    #     return float(f) * u.hertz
+
+
+    @frequency.setter
+    def frequency(self, val):
+        self.inst.write("FREQ: %f" %val)
+
 
     @property
-    def volt(self, q):
-        return float(self.inst.query(q)) * self.ureg.volts
+    def volt(self):
+        return float(self.inst.query("VOLT?")) * u.volt
 
-    @setter
-    def volt(self, command, value):
-        self.inst.write(command + str(value))
+    @volt.setter
+    def volt(self, val):
+        self.inst.write('VOLT %i' %val)
 
 # gathering up reused code in superclass and making these subclasses of that
 # Link to manual: http://www.ece.mtu.edu/labs/EElabs/EE3306/Revisions_2008/agt33250aman.pdf
 # Returning just a float vs. returning an actual pint.Quantity
 
-class Agilent_33250A():
+class Agilent_33250A(FunctionGenerator):
     """
     Hardware wrapper for the Agilent 33250A Arbitrary Waveform Generator
 
@@ -75,37 +139,34 @@ class Agilent_33250A():
     """
 
     def __init__(self, visa_search_term):
-         rm = visa.ResourceManager()
-         self.inst = rm.open_resource(visa_search_term)
-         self.ureg = pint.UnitRegistry()
+         super(Agilent_33250A, self).__init__(visa_search_term)
+
+
+    #must redefine properties in subclasses
+    @property
+    def frequency(self):
+        f = self.inst.query('FREQ?')
+        return float(f) * u.hertz
+
+    @property
+    def volt(self):
+        return float(self.inst.query("VOLT?")) * u.volt
 
     @frequency.setter
     def frequency(self, val):
 
         #max and min values taken from user manual
-        if(val<1e-6):
+        if val<1 * u.microhertz:
             raise ValueError("Minimum frequency is 1µHz")
         elif((waveform_name == "SIN" or waveform_name=="SQU") and
-             value>80e6)
+             value>80 *u.megahertz):
             raise ValueError("Max frequency is 80 MHz for %s waves" % waveform_name)
-        elif(waveform_name=="PULS" and (val<500e-6 or val>50e6))
+        elif(waveform_name=="PULS" and (val<500 * u.microhertz or val>50 * u.megahertz)):
             raise ValueError("Frequency must be between 500 µHz and 50 MHz for pulse waves")
         self.inst.write('FREQ %i' % val)
 
-    @property
-    def frequency(self):
-        return float(self.inst.query('FREQ?')) * self.ureg.hertz
-
     # alias
     freq = frequency
-
-    @property
-    def volt(self):
-        return float(self.inst.query('VOLT?')) * self.ureg.volt
-
-    @volt.setter
-    def volt(self, val):
-        self.inst.write('VOLT %i' %val)
 
     # alias
     voltage = volt
@@ -114,8 +175,8 @@ class Agilent_33250A():
     def phase(self):
         unit = self.inst.query('UNIT:ANGL?')
         if("RAD" in unit):
-            return float(self.inst.query('PHAS?')) * self.ureg.radian
-        return float(self.inst.query('PHAS?')) * self.ureg.degree
+            return float(self.inst.query('PHAS?')) * u.radian
+        return float(self.inst.query('PHAS?')) * u.degree
 
     @phase.setter
     def phase(self, val):
@@ -189,7 +250,7 @@ class Agilent_33250A():
         self.save_as(waveform_name)
 
 # link to user manual: http://www.thinksrs.com/downloads/pdfs/manuals/DS345m.pdf
-class SRS_DS345():
+class SRS_DS345(FunctionGenerator):
     """
     Hardware wrapper for the Stanford Research Systems DS345
     Arbitrary Waveform Generator
@@ -210,31 +271,24 @@ class SRS_DS345():
         duty_cycle (float): The duty cycle of the square wave form in percent.
     """
     def __init__(self, visa_search_term):
-        rm = visa.ResourceManager()
-        self.inst = rm.open_resource(visa_search_term)
-        self.ureg = pint.UnitRegistry()
+         super(SRS_DS345, self).__init__(visa_search_term)
 
-    def identify(self):
-        """
-        Returns:
-            str: the response from the ``*IDN?`` GPIB query.
-        """
-        return self.inst.query('*IDN?')[:-1]
 
     @property
     def frequency(self):
-        return float(self.inst.query('FREQ?')) * self.ureg.hertz
+        f = self.inst.query('FREQ?')
+        return float(f) * u.hertz
 
     @frequency.setter
     def frequency(self, val):
         if(self.waveform_name == "NOIS"):
             raise ValueError("Frequency must remain at 10 MHz when waveform is 'NOISE'")
-        elif(val<1e-6):
+        elif(val<1 * u.microhertz):
             raise ValueError("Minimum frequency is 1 µHz")
         elif((self.waveform_name == "SIN" or self.waveform_name == "SQ") and
-              val>30.2e6):
+              val>30.2 * u.megahertz):
             raise ValueError("Maximum frequency is 30.2 MHz for %s waves" % waveform_name)
-        elif(self.waveform_name == "RAMP" and val>1e5):
+        elif(self.waveform_name == "RAMP" and val>100 * u.kilohertz):
             raise ValueError("Maximum frequency is 100 KHz for ramp waves")
         self.inst.write('FREQ %i' % val)
 
@@ -243,7 +297,7 @@ class SRS_DS345():
 
     @property
     def voltage(self):
-        return float(self.inst.query('AMPL?')[:-3]) * self.ureg.volt
+        return float(self.inst.query('AMPL?')[:-3]) * u.volt
 
     @voltage.setter
     def voltage(self, val):
@@ -265,7 +319,7 @@ class SRS_DS345():
 
     @property
     def phase(self):
-        return float(self.inst.query('PHSE?')) * self.ureg.degree
+        return float(self.inst.query('PHSE?')) * u.degree
 
     @phase.setter
     def phase(self, val):
@@ -273,7 +327,7 @@ class SRS_DS345():
             raise Exception("Can't set phase when waveform is 'NOISE'")
         self.inst.write('PHSE %f' % val)
 
-class HP_33120A(): #same
+class HP_33120A(FunctionGenerator): #same
     """
     Hardware wrapper for the HP 33120A Arbitrary Waveform Generator
 
@@ -293,50 +347,36 @@ class HP_33120A(): #same
         duty_cycle (float): The duty cycle of the square wave form in percent.
     """
     def __init__(self, visa_search_term):
-        rm = visa.ResourceManager()
-        self.inst = rm.open_resource(visa_search_term)
-        self.ureg = pint.UnitRegistry()
-
-    def identify(self):
-        """
-        Returns:
-            str: the response from the ``*IDN?`` GPIB query.
-        """
-        return self.inst.query('*IDN?')[:-1]
+         super(HP_33120A, self).__init__(visa_search_term)
 
     @property
     def frequency(self):
-        return float(self.inst.query('FREQ?')) * self.ureg.hertz
+        f = self.inst.query('FREQ?')
+        return float(f) * u.hertz
+
+    @property
+    def volt(self):
+        return float(self.inst.query("VOLT?")) * u.volt
 
     @frequency.setter
     def frequency(self, val):
-        if(val<100e-6):
+        if(val<100 * u.microhertz):
             raise ValueError("Minimum frequency is 100 µHz")
-        elif((waveform_name == "SIN" or waveform_name == "SQU") and val>15e6):
+        elif((waveform_name == "SIN" or waveform_name == "SQU") and val>15 * u.megahertz):
             raise ValueError("Maximum frequency is 15 MHz for %s waves" % waveform_name)
-        elif(waveform_name=="RAMP" and val>100e3):
+        elif(waveform_name=="RAMP" and val>100 * u.kilohertz):
             raise ValueError("Maximum frequency is 100 KHz for ramp waves")
 
         self.inst.write('FREQ %i' % val)
 
     # alias
     freq = frequency
-
-    @property
-    def volt(self):
-        return float(self.inst.query('VOLT?')) * self.ureg.volt
-
-    @volt.setter
-    def volt(self, val):
-        string = 'VOLT %f' % float(val)
-        self.inst.write(string)
-
     # alias
     voltage = volt
 
     @property
     def phase(self):
-        return float(self.inst.query('PHAS?')) * self.ureg.degree
+        return float(self.inst.query('PHAS?')) * u.degree
 
 
     @phase.setter
