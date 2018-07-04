@@ -19,6 +19,7 @@ Arbitrary waveform generators and function generators can be imported by
 
 import visa
 import numpy as np
+import random
 
 from hardware import u
 
