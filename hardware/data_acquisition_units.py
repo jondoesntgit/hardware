@@ -7,6 +7,7 @@ Data Acquisition Units
    :synopsis: DAQ Unit Wrappers
 
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
+.. moduleauthor:: Anjali Thontakudi
 """
 
 try:
@@ -20,6 +21,7 @@ from ctypes import byref
 import queue
 import time
 from hardware import u
+import random
 
 class MockDAQ:
 
