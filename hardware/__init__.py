@@ -3,8 +3,23 @@ import sys
 import os
 import ctypes
 import pint
+import logging
+import datetime
 
 u = pint.UnitRegistry()
+
+# use a+ instead to append to the file - useful for tracking settings over the
+# course of several measurements
+
+file = open("instrument_settings.txt", "w+")
+
+with file:
+    # load the logging capabilities
+    logging.basicConfig(filename = "instrument_settings.txt",
+                        filemode = "w",
+                        format = '%(datetime.datetime.now())s - %(name)s - %(message)s',
+                        level = logging.INFO)
+
 
 # Load the rotation stage if the hostname environment variable is set
 
