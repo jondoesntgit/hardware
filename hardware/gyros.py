@@ -13,7 +13,6 @@ Fiber Optic Gyroscopes
 """
 
 
-
 try:
     from hardware import lia, rot, daq
 except:
@@ -35,16 +34,21 @@ import asyncio
 import random
 from hardware import u
 
+
 class MockGyro:
     def __init__(self, instr_name = None):
         if not instr_name:
-            self.name = "Gyroscope"
+            self.name = "Northrop Grumman LN 200"
         else:
             self.name = instr_name
-        self.data = {"name": self.name,
-                     "radius": random.randint(1, 5) * u.inches,
-                     "length": random.randint(1, 10) * u.inch,
-                     "pitch": random.randint(1, 30) * u.degree,
+
+        # data taken from
+        # https://www.northropgrumman.com/Capabilities/LN200FOG/Documents/ln200.pdf
+        self.data = {
+                     "name": self.name,
+                     "radius": 1.75 * u.inch,
+                     "diameter": 3.5 * u.inch,
+                     "pitch": 0 * u.degree,
                     }
 
     def identify(self):
@@ -55,6 +59,7 @@ class MockGyro:
 
     def rotate(self):
         print("Rotating")
+
 
 class Gyro:
     """
@@ -149,7 +154,7 @@ class Gyro:
         time.sleep(.5)
         lia.autophase()
 
-        #return variables to initial condition
+        # return variables to initial condition
         rot.velocity = tmp_velocity
         lia.sensitivity = tmp_sensitivity
         rot.wait_until_motor_is_idle()
@@ -188,61 +193,42 @@ class Gyro:
         lia.time_constant = 0.01
 
         # set the rotation speed and store the current
-        # keep
-        # rotation speed
+        # keep rotation speed
         cal_velocity = rot.velocity
         rot.velocity = velocity
 
         # set the acquisition rate
-        cal_acquisition_rate = floor(1/cal_integration_time) # should this be 1/(3*integration time)??
+        cal_acquisition_rate = floor(1/cal_integration_time)   # should this be 1/(3*integration time)??
 
         # start acquisition and store the calibrated data
 
-        def rotate(direction, seconds):
-            rot.rotate(direction, background = True)
+        rot.ccw(5, background=True)
+        time.sleep(1)
+        ccw_data = daq.read(seconds=3, rate=cal_acquisition_rate,
+                            verbose=False)
+        time.sleep(5)
 
-        async def measure(seconds)
-            time.sleep(1)
-            await daq.read(seconds-2)
-            # sum_of_vals += daq.read(seconds-2)? <--if it's returning the next
-            # value read on the queue instead of the generator?
+        rot.cw(5, background=True)
+        time.sleep(1)
+        cw_data = daq.read(seconds=3, rate=cal_acquisition_rate, verbose=False)
+        time.sleep(5)
 
-
-        loop = asyncio.get_event_loop()
-        __, cw_data = loop.run_until_complete(asyncio.gather(rotate("cw", seconds), measure(seconds)))
-        __, ccw_data = loop.run_until_complete(asyncio.gather(rotate("ccw", seconds), measure(seconds)))
-
-        return ( mean(cw_data) - mean(ccw_data) ) / seconds
-
-        # rot.ccw(5, background=True)
-        # time.sleep(1)
-        # ccw_data = daq.read(seconds=3, rate=cal_acquisition_rate,
-        #                     verbose=False)
-        # time.sleep(5)
-        #
-        # rot.cw(5, background=True)
-        # time.sleep(1)
-        # cw_data = daq.read(seconds=3, rate=cal_acquisition_rate, verbose=False)
-        # time.sleep(5)
-        #
-        # lia.time_constant = cal_integration_time
-        # lia.sensitivity = cal_sensitivity
-        # rot.velocity = cal_velocity
-
-        # def get_scale_factor(seconds): # should also contain velocity
-
+        lia.time_constant = cal_integration_time
+        lia.sensitivity = cal_sensitivity
+        rot.velocity = cal_velocity
 
         if not pitch:
             pitch = float(self.data.get('pitch', 0))
 
         volt_seconds_per_degree = ((mean(ccw_data) - mean(cw_data))/2
-            / cos(pitch * pi / 180))
+                                   / cos(pitch * pi / 180))
         volt_hours_per_degree = volt_seconds_per_degree / 3600
         degrees_per_hour_per_volt = 1 / volt_hours_per_degree
-        return degrees_per_hour_per_volt * ureg.degree/ureg.hour/ureg.volt
+        return degrees_per_hour_per_volt * u.degree/u.hour/u.volt
 
     def tombstone(self, seconds=None, minutes=None, hours=None, rate=None,
-                  autophase=False, autohome=True, scale_factor=0, sensitivity=None,max_duration=None):
+                  autophase=False, autohome=True, scale_factor=0,
+                  sensitivity=None, max_duration=None):
         """
         Performs a tombstone test of the gyro. The gyro records a time series
         of rotation data when no rotation is applied to it. This data can be
@@ -260,8 +246,8 @@ class Gyro:
                 between lock-in amplifier voltage and rotation rate in units
                 of deg/h/Volt. If this is not set, the gyro will run the
                 :func:`hardware.gyros.get_scale_factor` routine.
-			Sensitivity (float): The sensitivity of the LIA for the scale
-				calibration and taking data. Put in [V]
+            Sensitivity (float): The sensitivity of the LIA for the scale
+                calibration and taking data. Put in [V]
 
         Returns:
             Tombstone: A :class:`pyfog.tombstone.Tombstone` object
@@ -306,10 +292,13 @@ class Gyro:
         initial_values = zeros(max_duration * rate)
         initial_values.fill(nan)
 
-        tmb = Tombstone(initial_values, rate=rate, start=time.time(), scale_factor=scale_factor)
+        tmb = Tombstone(initial_values, rate=rate, start=time.time(),
+                        scale_factor=scale_factor)
 
-        tmb._data_thread = StoppableThread(target=self.detector, args=(tmb,), kwargs={"rate": rate, "max_duration": max_duration})
-        tmb._adev_check_thread = StoppableThread(target=self.adev_checker, args=(tmb,))
+        tmb._data_thread = StoppableThread(target=self.detector, args=(tmb,),
+                                            kwargs={"rate": rate, "max_duration": max_duration})
+        tmb._adev_check_thread = StoppableThread(target=self.adev_checker,
+                                                 args=(tmb,))
         tmb._data_thread.start()
         tmb._adev_check_thread.start()
         return tmb
@@ -341,28 +330,29 @@ class Gyro:
 
         data = daq.read(seconds, rate=rate)
         if not rate:
+            # duration isn't defined in this method, even in the original code
             rate = len(data/duration)
         _, dev, _, _ = oadev(data*scale_factor, rate=rate, data_type='freq',
                              taus=[1])
-        return dev[0]/60 #dev[0] = noise (see graph) --> given in degrees
+        return dev[0]/60
 
     def detector(self, tmb, rate, max_duration):
-        #will create another thread to run in backgroud?
+
         data = daq.read(1, rate, asynchronous=True)
-        i=0
+        i = 0
         while i < rate*max_duration:
             data_to_add = next(data)
             next_i = i + len(data_to_add)
-            #if the tombstone fills up
-            if next_i > len(tmb): break
-            #adds to tombstone
+
+            if next_i > len(tmb):
+                break
+
             tmb.iloc[i:next_i] = data_to_add
             i = next_i
             if tmb._data_thread.stopped():
                 return
         self.notify('Reached max duration')
         tmb.stop()
-
 
     def adev_checker(self, tmb, period=5, threshold=1.5):
         """Check every {period} seconds until ADev max climbs {threshold} dB above ADev min"""
@@ -383,10 +373,10 @@ class Gyro:
                 break
         tmb.stop()
 
-
     def notify(self, msg):
-        """Some function we can use to notify the user that a thread has finished"""
+        """Some function we can use to notify the user that a thread has finished."""
         print(msg)
+
 
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check

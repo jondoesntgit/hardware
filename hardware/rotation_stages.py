@@ -21,6 +21,8 @@ import json
 import threading
 from hardware import u
 import random
+import logging
+
 
 class MockRotationStage:
     def __init__(self, instr_name = None):
@@ -30,6 +32,7 @@ class MockRotationStage:
             self.name = instr_name
         self._angle = random.randint(1, 361) * u.degree
         self._velocity = random.randint(1, 10) * u.degree/u.second
+        self.logger = logging.getLogger(__name__)
 
     def identify(self):
         return self.name
@@ -39,8 +42,9 @@ class MockRotationStage:
         return self._angle
 
     @angle.setter
-    def angle(self, value):
-        self._angle = value * u.degree
+    def angle(self, val):
+        self._angle = val * u.degree
+        self.logger.info("Angle set to %f degree" % val)
 
     @property
     def velocity(self):
@@ -49,6 +53,7 @@ class MockRotationStage:
     @velocity.setter
     def velocity(self, val):
         self._velocity = val * u.degree/u.second
+        self.logger.info("Velocity set to %f deg/s" % val)
 
     def rotate(self):
         print("Rotating")
@@ -68,6 +73,7 @@ class NSC_A1:
     """
     def __init__(self, hostname):
         self.hostname = hostname.rstrip('/')
+        self.logger = logging.getLogger(__name__ + ".NSC A1")
 
     @property
     def angle(self):
@@ -82,15 +88,17 @@ class NSC_A1:
     @velocity.setter
     def velocity(self, val):
         requests.get(self.hostname + '/rot/velocity/%f' % val)
+        self.logger.info("Angular velocity set to %f deg/s" % val)
 
     @angle.setter
     def angle(self, val):
         requests.get(self.hostname + '/rot/angle/%f' % val)
+        self.logger.info("Angle set to %f degrees" % val)
 
     def rotate(self, direction, background=False):
         if(direction.lower() == "cw" or direction.lower() == "clockwise"):
             self.cw()
-        elif(direction.lower()=="ccw" or direction.lower()== "counterclockwise"):
+        elif(direction.lower() == "ccw" or direction.lower() == "counterclockwise"):
             self.ccw()
 
     def cw(self, val, background=False):
@@ -105,7 +113,7 @@ class NSC_A1:
         if background:
             def worker(url):
                 requests.get(url)
-            threading.Thread(target=worker, args=(self.hostname + '/rot/cw/%f' % val,)).start()
+            threading.Thread(target=worker, args = (self.hostname + '/rot/cw/%f' % val,)).start()
         else:
             requests.get(self.hostname + '/rot/cw/%f' % val )
 

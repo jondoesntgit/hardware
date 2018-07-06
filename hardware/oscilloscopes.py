@@ -22,6 +22,8 @@ import visa
 from numpy import array, arange
 import time
 from hardware import u
+import logging
+
 
 class MockOscilloscope:
     def __init__(self, instr_name = None):
@@ -45,6 +47,7 @@ class MockOscilloscope:
     def run(self):
         print("Running")
 
+
 class Agilent_DSO1024A:
     """
     Hardware wrapper for Agilent DSO1024A digital oscilloscopes.
@@ -56,6 +59,7 @@ class Agilent_DSO1024A:
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
+        self.logger = logging.getLogger(__name__ + ".Agilent DSO1024A")
 
     def identify(self):
         """
@@ -72,6 +76,7 @@ class Agilent_DSO1024A:
             milliseconds (float): The amount of time to wait before timing out
         """
         self.inst.timeout = milliseconds
+        self.logger.info("Timeout set to %f milliseconds" % milliseconds)
 
     def single(self):
         """

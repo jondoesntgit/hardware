@@ -20,8 +20,10 @@ Arbitrary waveform generators and function generators can be imported by
 import visa
 import numpy as np
 import random
+import logging
 
 from hardware import u
+
 
 class MockFunctionGenerator:
 
@@ -31,10 +33,12 @@ class MockFunctionGenerator:
         else:
             self.name = instr_name
         self._frequency = 3 * u.hertz
-        self._voltage = 1 *u.volt
+        self._voltage = 1 * u.volt
         self.waveforms = ['SIN', 'SQU', 'RAMP', 'PULS', 'NOIS', 'DC', 'USER']
+        self._wf = self.waveforms[random.randint(0, len(self.waveforms))]
         self._phase = 20 * u.degree
-        self._duty_cycle = 50 #as a percent
+        self._duty_cycle = 50  # as a percent
+        self.logger = logging.getLogger(__name__)
 
     def identify(self):
         return self.name
@@ -46,6 +50,7 @@ class MockFunctionGenerator:
     @frequency.setter
     def frequency(self, val):
         self._frequency = val * u.hertz
+        self.logger.info("Frequency set to %f Hz" % val)
 
     @property
     def voltage(self):
@@ -53,12 +58,12 @@ class MockFunctionGenerator:
 
     @voltage.setter
     def voltage(self, val):
-        self._voltage = val *u.volt
+        self._voltage = val * u.volt
+        self.logger.info("Voltage set to %f V" % val)
 
     @property
     def waveform_name(self):
-        index = random.randint(0, 7)
-        return self.waveforms[index]
+        return self._wf
 
     @property
     def phase(self):
@@ -67,6 +72,7 @@ class MockFunctionGenerator:
     @phase.setter
     def phase(self, val):
         self._phase = val * u.degree
+        self.logger.info("Phase set to %f degrees" % val)
 
     @property
     def duty_cycle(self):
@@ -75,12 +81,13 @@ class MockFunctionGenerator:
     @duty_cycle.setter
     def duty_cycle(self, val):
         self._duty_cycle = val
+        self.logger.info("Duty cycle set to %f percent" % val)
+
 
 class FunctionGenerator:
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
-
 
     def identify(self):
         """
@@ -102,11 +109,11 @@ class FunctionGenerator:
     #     f = self.inst.query('FREQ?')
     #     return float(f) * u.hertz
 
-
     @frequency.setter
     def frequency(self, val):
-        self.inst.write("FREQ: %f" %val)
-
+        self.inst.write("FREQ: %f" % val)
+        if(hasattr(self, "logger")):
+            self.logger.info("Frequency set to %f Hz" % val)
 
     @property
     def volt(self):
@@ -114,7 +121,9 @@ class FunctionGenerator:
 
     @volt.setter
     def volt(self, val):
-        self.inst.write('VOLT %i' %val)
+        self.inst.write('VOLT %i' % val)
+        if(hasattr(self, "logger")):
+            self.logger.info("Voltage set to %i V" % val)
 
 # gathering up reused code in superclass and making these subclasses of that
 # Link to manual: http://www.ece.mtu.edu/labs/EElabs/EE3306/Revisions_2008/agt33250aman.pdf
@@ -140,10 +149,10 @@ class Agilent_33250A(FunctionGenerator):
     """
 
     def __init__(self, visa_search_term):
-         super(Agilent_33250A, self).__init__(visa_search_term)
+        super(Agilent_33250A, self).__init__(visa_search_term)
+        self.logger = logging.getLogger(__name__ + ".Agilent_33250A")
 
-
-    #must redefine properties in subclasses
+    # must redefine properties in subclasses
     @property
     def frequency(self):
         f = self.inst.query('FREQ?')
@@ -156,15 +165,17 @@ class Agilent_33250A(FunctionGenerator):
     @frequency.setter
     def frequency(self, val):
 
-        #max and min values taken from user manual
-        if val<1 * u.microhertz:
+        # max and min values taken from user manual
+        if val < 1 * u.microhertz:
             raise ValueError("Minimum frequency is 1µHz")
-        elif((waveform_name == "SIN" or waveform_name=="SQU") and
-             value>80 *u.megahertz):
-            raise ValueError("Max frequency is 80 MHz for %s waves" % waveform_name)
-        elif(waveform_name=="PULS" and (val<500 * u.microhertz or val>50 * u.megahertz)):
+        elif((self.waveform == "SIN" or self.waveform == "SQU") and
+             val > 80 * u.megahertz):
+            raise ValueError("Max frequency is 80 MHz for %s waves" % self.waveform)
+        elif(self.waveform == "PULS" and (val < 500 * u.microhertz
+                                          or val > 50 * u.megahertz)):
             raise ValueError("Frequency must be between 500 µHz and 50 MHz for pulse waves")
         self.inst.write('FREQ %i' % val)
+        self.logger.info("Frequency set to %i Hz" % val)
 
     # alias
     freq = frequency
@@ -182,6 +193,8 @@ class Agilent_33250A(FunctionGenerator):
     @phase.setter
     def phase(self, val):
         self.inst.write('PHAS %f' % val)
+        unit = self.inst.query('UNIT:ANGL?')
+        self.logger.info("Phase set to %f %s" % (val, unit))
 
     @property
     def duty_cycle(self):
@@ -190,6 +203,7 @@ class Agilent_33250A(FunctionGenerator):
     @duty_cycle.setter
     def duty_cycle(self, val):
         self.inst.write('FUNCtion:SQUare:DCYCLe %f' % val)
+        self.logger.info("Duty cycle set to %i percent" % val)
 
     @property
     def waveform(self):
@@ -204,12 +218,13 @@ class Agilent_33250A(FunctionGenerator):
             'SIN', 'SQU', 'RAMP', 'PULS', 'NOIS', 'DC', 'USER'
         ]
         if val.upper() in (waveform_list):
-            #don't need returns
-            return self.inst.write('FUNC %s' % val)
+            self.inst.write('FUNC %s' % val)
+            self.logger.info("Waveform set to %s" % val)
 
         elif val.upper()[0:4] == 'USER':
-            #don't need return
-            return self.inst.write('FUNC:%s' % val)
+            self.inst.write('FUNC:%s' % val)
+            self.logger.info("Waveform set to %s" % val)
+
         else:
             raise Exception('%s is not a recognized waveform' % val)
 
@@ -236,6 +251,7 @@ class Agilent_33250A(FunctionGenerator):
             waveform_name (str): The name of the saved waveform
         """
         self.inst.write('DATA:COPY %s' % waveform_name)
+        self.logger.info("Data saved as %s" % waveform_name)
 
     def upload_as(self, points_array, waveform_name):
         """
@@ -251,6 +267,8 @@ class Agilent_33250A(FunctionGenerator):
         self.save_as(waveform_name)
 
 # link to user manual: http://www.thinksrs.com/downloads/pdfs/manuals/DS345m.pdf
+
+
 class SRS_DS345(FunctionGenerator):
     """
     Hardware wrapper for the Stanford Research Systems DS345
@@ -272,8 +290,8 @@ class SRS_DS345(FunctionGenerator):
         duty_cycle (float): The duty cycle of the square wave form in percent.
     """
     def __init__(self, visa_search_term):
-         super(SRS_DS345, self).__init__(visa_search_term)
-
+        super(SRS_DS345, self).__init__(visa_search_term)
+        self.logger = logging.getLogger(__name__ + ".SRS DS345")
 
     @property
     def frequency(self):
@@ -282,16 +300,17 @@ class SRS_DS345(FunctionGenerator):
 
     @frequency.setter
     def frequency(self, val):
-        if(self.waveform_name == "NOIS"):
+        if(self.waveform == "NOIS"):
             raise ValueError("Frequency must remain at 10 MHz when waveform is 'NOISE'")
-        elif(val<1 * u.microhertz):
+        elif(val < 1 * u.microhertz):
             raise ValueError("Minimum frequency is 1 µHz")
-        elif((self.waveform_name == "SIN" or self.waveform_name == "SQ") and
-              val>30.2 * u.megahertz):
-            raise ValueError("Maximum frequency is 30.2 MHz for %s waves" % waveform_name)
-        elif(self.waveform_name == "RAMP" and val>100 * u.kilohertz):
+        elif((self.waveform == "SIN" or self.waveform == "SQ") and
+             val > 30.2 * u.megahertz):
+            raise ValueError("Maximum frequency is 30.2 MHz for %s waves" % self.waveform)
+        elif(self.waveform == "RAMP" and val > 100 * u.kilohertz):
             raise ValueError("Maximum frequency is 100 KHz for ramp waves")
         self.inst.write('FREQ %i' % val)
+        self.logger.info("Frequency set to %f Hz" % val)
 
     # alias
     freq = frequency
@@ -314,6 +333,7 @@ class SRS_DS345(FunctionGenerator):
 # Arbitrary 10V 10 mV  n.a.  n.a.      n.a.   n.a.
 
         self.inst.write('AMPL %f' % val)
+        self.logger.info("Voltage set to %i V" % val)
 
     # alias
     volt = voltage
@@ -324,11 +344,13 @@ class SRS_DS345(FunctionGenerator):
 
     @phase.setter
     def phase(self, val):
-        if(self.waveform_name == "NOIS" ):
+        if(self.waveform == "NOIS"):
             raise Exception("Can't set phase when waveform is 'NOISE'")
         self.inst.write('PHSE %f' % val)
+        self.logger.info("Phase set to %f" % val)
 
-class HP_33120A(FunctionGenerator): #same
+
+class HP_33120A(FunctionGenerator):
     """
     Hardware wrapper for the HP 33120A Arbitrary Waveform Generator
 
@@ -348,7 +370,8 @@ class HP_33120A(FunctionGenerator): #same
         duty_cycle (float): The duty cycle of the square wave form in percent.
     """
     def __init__(self, visa_search_term):
-         super(HP_33120A, self).__init__(visa_search_term)
+        super(HP_33120A, self).__init__(visa_search_term)
+        self.logger = logging.getLogger(__name__ + ".HP 33120A")
 
     @property
     def frequency(self):
@@ -361,14 +384,16 @@ class HP_33120A(FunctionGenerator): #same
 
     @frequency.setter
     def frequency(self, val):
-        if(val<100 * u.microhertz):
+        if(val < 100 * u.microhertz):
             raise ValueError("Minimum frequency is 100 µHz")
-        elif((waveform_name == "SIN" or waveform_name == "SQU") and val>15 * u.megahertz):
-            raise ValueError("Maximum frequency is 15 MHz for %s waves" % waveform_name)
-        elif(waveform_name=="RAMP" and val>100 * u.kilohertz):
+        elif((self.waveform == "SIN" or self.waveform == "SQU")
+                and val > 15 * u.megahertz):
+            raise ValueError("Maximum frequency is 15 MHz for %s waves" % self.waveform)
+        elif(self.waveform == "RAMP" and val > 100 * u.kilohertz):
             raise ValueError("Maximum frequency is 100 KHz for ramp waves")
 
         self.inst.write('FREQ %i' % val)
+        self.logger.info("Frequency set to %f Hz" % val)
 
     # alias
     freq = frequency
@@ -379,11 +404,10 @@ class HP_33120A(FunctionGenerator): #same
     def phase(self):
         return float(self.inst.query('PHAS?')) * u.degree
 
-
     @phase.setter
     def phase(self, val):
         self.inst.write('PHAS %f' % val)
-
+        self.logger.info("Phase set to %f" % val)
 
     @property
     def duty_cycle(self):
@@ -392,6 +416,7 @@ class HP_33120A(FunctionGenerator): #same
     @duty_cycle.setter
     def duty_cycle(self, val):
         self.inst.write('FUNCtion:SQUare:DCYCLe %f' % val)
+        self.logger.info("Duty cycle set to %f percent" % val)
 
     @property
     def waveform(self):
@@ -406,10 +431,15 @@ class HP_33120A(FunctionGenerator): #same
             'SIN', 'SQU', 'RAMP', 'PULS', 'NOIS', 'DC', 'USER'
         ]
         if val.upper() in (waveform_list):
+            self.logger.info("Waveform set to %s" % val)
+
             return self.inst.write('FUNC %s' % val)
 
         elif val.upper()[0:4] == 'USER':
+            self.logger.info("Waveform set to %s" % val)
+
             return self.inst.write('FUNC:%s' % val)
+
         else:
             raise Exception('%s is not a recognized waveform' % val)
 
@@ -436,6 +466,7 @@ class HP_33120A(FunctionGenerator): #same
             waveform_name (str): The name of the saved waveform
         """
         self.inst.write('DATA:COPY %s' % waveform_name)
+        self.logger.info("Waveform saved %s" % waveform_name)
 
     def upload_as(self, points_array, waveform_name):
         """

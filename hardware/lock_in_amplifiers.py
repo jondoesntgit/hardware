@@ -8,6 +8,7 @@ Lock-in Amplifiers
    :synopsis: Python wrappers for lock-in amplifiers
 
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
+.. moduleauthor:: Anjali Thontakudi
 
 This module provides support for controlling lock-in amplifiers with Python.
 Lock-in amplifiers can be imported by
@@ -20,8 +21,25 @@ Lock-in amplifiers can be imported by
 import visa
 from hardware import u
 import random
+import logging
 
 class MockLockInAmplifier:
+    """
+    This class serves as a dummy lock in amplifier, used for testing.
+
+    Parameters
+    ----------------------------------------
+        instr_name (str, optional): The name for the amplifier
+
+    Attributes
+    ----------------------------------------
+        _sensitivity_dict (dict): A shortened dictionary of the sensitivities
+                                  the amplifier can be set to
+        _time_constant_list (list): A shortened lit of possible time constants
+        name (str): The name of the amplifier
+        logger (logging): A reference to a logger that prints information
+                         statements when a value (i.e. phase) is set
+    """
 
     def __init__(self, instr_name = None):
         if not instr_name:
@@ -38,7 +56,7 @@ class MockLockInAmplifier:
                 5: {"Vrms": 30e-6, "dBm": -77},
             }
 
-            # see page 115 of manual
+    # see page 115 of manual
         self._time_constant_list = [  # query by index
                 100e-6,
                 300e-6,
@@ -47,25 +65,30 @@ class MockLockInAmplifier:
                 10e-3,
             ]
 
+        self.logger = logging.getLogger(__name__)
+
+        key = random.randint(0, len(self._time_constant_list))
+        self._time_constant = self._time_constant_list[key] * u.second
+        self._phase = random.randint(1, 361) * u.degree
+
+        key2 = random.randint(0, len(self._sensitivity_dict))
+        self._sensitivity = self._sensitivity_dict[key2] * u.volt
 
     def identify(self):
         return self.name
 
     @property
     def phase(self):
-        return random.randint(1, 361) * u.degree
+        return self._phase
 
     @property
     def time_constant(self):
-        key = random.randint(0, len(self._time_constant_list))
-        self._time_constant = self._time_constant_list[key]
-        return self._time_constant * u.second
-
+        return self._time_constant
 
     @property
     def sensitivity(self):
-        key = random.randint(0, len(self._sensitivity_dict))
-        return self._sensitivity_dict[key]['Vrms'] * u.volt
+        self._sensitivity
+
 
 class SRS_SR844:
     """
@@ -149,6 +172,7 @@ class SRS_SR844:
             14: {"name": "-", "set_when": "Unused"},
             15: {"name": "-", "set_when": "Unused"},
         }
+        self.logger = logging.getLogger(__name__ + ".SRS SR844")
 
     def identify(self):
         """
@@ -159,11 +183,12 @@ class SRS_SR844:
 
     @property
     def phase(self):
-        return float(self.inst.query('PHAS?')[:-1]) *u.degree
+        return float(self.inst.query('PHAS?')[:-1]) * u.degree
 
     @phase.setter
     def phase(self, val):
         self.inst.write('PHAS %f' % val)
+        self.logger.info("Phase set to %f degrees" % val)
 
     @property
     def sensitivity(self):
@@ -173,13 +198,14 @@ class SRS_SR844:
     @sensitivity.setter
     def sensitivity(self, val):
         key = [d['Vrms'] for d in self._sensitivity_dict.values()].index(val)
-            #create array of Vrms values from dictionary by iterating through values
-            #from the values we are only looking at those w [Vrms] key
-            #if find the Vrms key index, that index is the sensitivity
+        # create array of Vrms values from dictionary by iterating through values
+        # from the values we are only looking at those w [Vrms] key
+        # if find the Vrms key index, that index is the sensitivity
         if key not in self._sensitivity_dict:
             raise ValueError("Not a valid sensitivity")
         self.inst.write('SENS %i' % key)
-        #raise Exception if value isn't in the array (Value Error)
+        self.logger.info("Sensitivity set to %i V" % val)
+        # raise Exception if value isn't in the array (Value Error)
 
     @property
     def time_constant(self):
@@ -190,6 +216,7 @@ class SRS_SR844:
     def time_constant(self, val):
         key = self._time_constant_list.index(val)
         self.inst.write('OFLT %i' % key)
+        self.logger.info("Time constant set to %f seconds" % val)
 
     def autophase(self):
         """

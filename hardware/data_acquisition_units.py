@@ -14,7 +14,6 @@ try:
     from PyDAQmx import *
 except:
     print("It seems that niDAQmx is not installed on this system.")
-
 import numpy
 import ctypes
 from ctypes import byref
@@ -23,7 +22,18 @@ import time
 from hardware import u
 import random
 
+
 class MockDAQ:
+    """
+    This class acts as a dummy version of the NI 9215 DAQ
+
+    Parameters:
+        instr_name (str, optional): The name of the instrument
+
+    Attributes:
+        name (str): The DAQ name
+        data (list): A list of random ints between 0 and 9
+    """
 
     def __init__(self, instr_name = None):
         if not instr_name:
@@ -42,6 +52,7 @@ class MockDAQ:
 
     def stop(self):
         print("Stopped")
+
 
 class NI_9215:
     """
@@ -62,7 +73,7 @@ class NI_9215:
     def __init__(self, device_name=None, max_voltage=None, rate=None):
         if not device_name:
             # Note, this will probably not work if multiple devices exist
-            n=1024
+            n = 1024
             data1 = ctypes.create_string_buffer(n)
             DAQmxGetSysDevNames(data1, n)
             device_name = data1.value.decode('utf-8')
@@ -72,7 +83,7 @@ class NI_9215:
         self.max_voltage = max_voltage
         self.task = None
 
-    #define two different read functions, one async and one sync
+    # define two different read functions, one async and one sync
     """
     async def read(self, seconds, rate=None, max_voltage=None, timeout=0,
              verbose=False, oversampling_ratio=10, task_name=""):
@@ -94,6 +105,7 @@ class NI_9215:
     def read(self, seconds, rate=None, max_voltage=None, timeout=0,
              verbose=False, oversampling_ratio=10, task_name="",
              asynchronous=False):
+
         """
         Parameters
         ----------
@@ -148,15 +160,15 @@ class NI_9215:
         rate = self._get_rate(rate, oversampling_ratio)
         max_voltage = self._get_max_voltage(max_voltage)
 
-
         self.task = self.FOG_DAQ_Task(
             self, seconds, rate, oversampling_ratio, max_voltage, asynchronous)
 
-        # a bunch of gymnastics to be able to return two different data tyoes
+        # a bunch of gymnastics to be able to return two different data types
         # basically bad practice, rewrite
         if asynchronous:
             self.queue = queue.Queue()
             self.task.StartTask()
+
             def gen(q):
                 while True:
                     yield q.get()
@@ -177,7 +189,8 @@ class NI_9215:
             return self.data
 
     class FOG_DAQ_Task(Task):
-        def __init__(self, daq, seconds, rate, oversampling_ratio, max_voltage, asynchronous):
+        def __init__(self, daq, seconds, rate, oversampling_ratio, max_voltage,
+                     asynchronous):
 
             Task.__init__(self)
 
@@ -264,7 +277,8 @@ class NI_9215:
 
             if asynchronous:
                 # Map EveryNCallback and DoneCallback into C callback functions
-                self.AutoRegisterEveryNSamplesEvent(DAQmx_Val_Acquired_Into_Buffer,sample_size,0, name='run')
+                self.AutoRegisterEveryNSamplesEvent(DAQmx_Val_Acquired_Into_Buffer,
+                                                    sample_size, 0, name='run')
                 self.AutoRegisterDoneEvent(0, name='finish')
 
         def run(self):
@@ -315,7 +329,7 @@ class NI_9215:
                 self.daq.data = data
 
         def finish(self, status):
-            return 0 # The function should return an integer)
+            return 0  # (The function should return an integer)
 
     def stop(self):
         """ If running in asynchronous mode, this stops the task"""
@@ -328,12 +342,12 @@ class NI_9215:
         Returns:
            str: response of ``DAQmxGetDevProductType``"""
         buf = ctypes.create_string_buffer(16)
-        DAQmxGetDevProductType(self.device_name, buf, 16);
+        DAQmxGetDevProductType(self.device_name, buf, 16)
         return "".join([(c).decode() for c in buf][:-1])
 
     @property
     def tasks(self):
-        n=1024
+        n = 1024
         data1 = ctypes.create_string_buffer(n)
         DAQmxGetSysTasks(data1, n)
         return data1.value.decode('utf-8')
