@@ -22,6 +22,7 @@ import threading
 from hardware import u
 import random
 import logging
+from enum import Enum
 
 
 class MockRotationStage:

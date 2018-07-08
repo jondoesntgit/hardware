@@ -39,7 +39,7 @@ class MockOpticalPowerMeter:
             self.name = "Optical Power Meter - Newport 1830C"
         else:
             self.name = instr_name
-        self._power = 5 * u.watt
+        self._power = 5 * u.milliwatt
 
     def identify(self):
         return self.name
@@ -76,4 +76,4 @@ class Newport_1830_C():
 
     @property
     def power(self):
-        return float(self.inst.query('D?')[:-1]) * u.watt
+        return float(self.inst.query('D?')[:-1]) * u.milliwatt
