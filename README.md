@@ -18,6 +18,9 @@ This changelog follows the recommendations put forth at [keepachangelong.com](ht
 ### Changed
 - Gyro scale factor code now uses sensitivity and pitch from either parameter arguments or JSON file values.
 
+### FAQ
+- When passing values to setter functions, the units must be specified. Units must come from the same pint.UnitRegistry() as that used by hardware
+
 ## [0.1.0] - [2017-12-10]
 
 This version merely contains all of the code developed up until this point.
