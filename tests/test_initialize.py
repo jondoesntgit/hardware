@@ -1,4 +1,4 @@
-from hardware import *
+from hardware import fog
 
 def test_fog():
     try:
