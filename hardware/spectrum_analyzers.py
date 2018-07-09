@@ -138,7 +138,7 @@ class ANDO_AQ6317B:
         self.inst.timeout = milliseconds
         self.logger.info("Timeout set to %f milliseconds" % milliseconds)
 
-    def get_spectrum(self):
+    def get_spectrum(self, channel='B'):
         """
         Returns the measured spectrum from a single reading of the instrument.
         Aliases to acquire
@@ -148,11 +148,11 @@ class ANDO_AQ6317B:
                 The first array contains the wavelengths in nanometers.
                 The second array contains the optical power in dBm.
         """
-        power_string = self.inst.query('LDATB')
+        power_string = self.inst.query('LDAT%s' % channel)
         power = np.array(power_string[:-2].split(','))
         power = power.astype(np.float)[2:]
 
-        wavelength_string = self.inst.query('WDATB')
+        wavelength_string = self.inst.query('WDAT%s' % channel)
         wavelength = np.array(wavelength_string[:-2].split(','))
         wavelength = wavelength.astype(np.float)[2:]
 

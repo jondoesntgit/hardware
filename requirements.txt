@@ -1,0 +1,5 @@
+numpy
+pyvisa
+pyserial
+sphinx
+coveralls
