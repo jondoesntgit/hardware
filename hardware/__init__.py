@@ -11,7 +11,7 @@ u = pint.UnitRegistry()
 # use a+ instead to append to the file - useful for tracking settings over the
 # course of several measurements
 
-file = open("instrument_settings.txt", "w+")
+file = open(datetime.datetime.today().strftime("%y%m%d.log"), "w+")
 
 with file:
     # load the logging capabilities
