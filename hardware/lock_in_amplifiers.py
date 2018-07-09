@@ -218,6 +218,34 @@ class SRS_SR844:
         self.inst.write('OFLT %i' % key)
         self.logger.info("Time constant set to %f seconds" % val)
 
+    @property
+    def x(self):
+        return float(self.inst.query('OUTP? 1'))
+
+    @property
+    def y(self):
+        return float(self.inst.query('OUTP? 2'))
+
+    @property
+    def x_offset(self):
+        return float(self.inst.query('DOFF? 1,0'))
+
+    @x_offset.setter
+    def x_offset(self, val):
+        if val > 110 or val < -110:
+            raise ValueError('Offset must be between -110% and 110%')
+        self.inst.write('DOFF 1,0,%.2f' % val)
+
+    @property
+    def y_offset(self):
+        return float(self.inst.query('DOFF? 2,0'))
+
+    @y_offset.setter
+    def y_offset(self, val):
+        if val > 100 or val < -110:
+            raise ValueError('Offset must be between -110% and 110%')
+        self.inst.write('DOFF 2,0,%2.f' % val)
+
     def autophase(self):
         """
         Sends the ``APHS`` command to the lock-in over the GPIB bus. This

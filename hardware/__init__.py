@@ -29,22 +29,27 @@ if os.getenv('ROTATION_STAGE_SERVER'):
 
 
 # see what's on the bus
-rm = visa.ResourceManager()
 
 resources_dict = dict()
 
-for resource in rm.list_resources():
-    try:
-        # Avoid serial devices...
-        # They cause some bugs...
-        if 'ASRL' in resource:
-            continue
-        inst = rm.open_resource(resource)
-        idn = inst.query('*IDN?')
-        resources_dict[idn] = resource
-    except:
-        # Couldn't open...
-        pass
+try:
+    rm = visa.ResourceManager()
+    for resource in rm.list_resources():
+        try:
+            # Avoid serial devices...
+            # They cause some bugs...
+            if 'ASRL' in resource:
+                continue
+            inst = rm.open_resource(resource)
+            idn = inst.query('*IDN?')
+            resources_dict[idn] = resource
+        except:
+            # Couldn't open...
+            pass
+
+except OSError:
+    # Visa not installed on this system
+    pass
 
 # Load the modules for which we have matches on the bus
 idn = 'Agilent Technologies,33250A,0,2.01-1.01-2.00-03-2\n'

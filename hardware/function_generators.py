@@ -243,6 +243,107 @@ class Agilent_33250A(FunctionGenerator):
         values = ', '.join(map(str, points_array))
         self.inst.write('DATA VOLATILE, %s' % values)
 
+    def set_duty_cycle(self, r, rise_time_over_cycle_time=0, fall_time_over_cycle_time=0):
+        from pyfog.waveforms import square_pulse
+        signal = square_pulse(
+            4e3,
+            duty_cycle = r,
+            rise_time_over_cycle_time = rise_time_over_cycle_time,
+            fall_time_over_cycle_time = fall_time_over_cycle_time,
+        )
+
+        __timeout = self.inst.timeout
+        self.inst.timeout = 10e3
+        self.upload_as(signal, 'PULSEWAVEFORM')
+        self.waveform = 'USER'
+        self.waveform = 'USER PULSEWAVEFORM'
+        self.inst.timeout = __timeout
+
+    def set_double_gate(self, r1, r2, duty_cycle=.50, rise_time_over_cycle_time=0, fall_time_over_cycle_time=0):
+        from pyfog.waveforms import square_pulse
+        signal1 = square_pulse(
+            2e3,
+            duty_cycle = r1,
+            rise_time_over_cycle_time = rise_time_over_cycle_time,
+            fall_time_over_cycle_time = fall_time_over_cycle_time,
+        )
+
+        signal2 = square_pulse(
+            2e3,
+            duty_cycle = r2,
+            rise_time_over_cycle_time = rise_time_over_cycle_time,
+            fall_time_over_cycle_time = fall_time_over_cycle_time,
+        )
+
+        signal1=np.roll(signal1, -int(2e3*r1/2))
+        signal2=np.roll(signal2, -int(2e3*r2/2))
+
+        signal = np.concatenate([signal1, signal2])
+
+        __timeout = self.inst.timeout
+        self.inst.timeout = 10e3
+        self.upload_as(signal, 'PULSEWAVEFORM')
+        self.waveform = 'USER'
+#        self.waveform = 'USER PULSEWAVEFORM'
+        self.inst.timeout = __timeout
+
+    def set_double_gate_no_roll(self, r1, r2, rise_time_over_cycle_time=0, fall_time_over_cycle_time=0):
+        from pyfog.waveforms import square_pulse
+        signal1 = square_pulse(
+            2e3,
+            duty_cycle = r1,
+            rise_time_over_cycle_time = rise_time_over_cycle_time,
+            fall_time_over_cycle_time = fall_time_over_cycle_time,
+        )
+
+        signal2 = square_pulse(
+            2e3,
+            duty_cycle = r2,
+            rise_time_over_cycle_time = rise_time_over_cycle_time,
+            fall_time_over_cycle_time = fall_time_over_cycle_time,
+        )
+        signal = np.concatenate([signal1, signal2])
+
+        __timeout = self.inst.timeout
+        self.inst.timeout = 10e3
+        self.upload_as(signal, 'PULSEWAVEFORM')
+        self.waveform = 'USER'
+#        self.waveform = 'USER PULSEWAVEFORM'
+        self.inst.timeout = __timeout
+
+    def set_double_gate_and_notch(self, r1, r2, r3, phase,  rise_time_over_cycle_time=0, fall_time_over_cycle_time=0):
+        from pyfog.waveforms import square_pulse
+        signal1 = square_pulse(
+            2e3,
+            duty_cycle = r1,
+            rise_time_over_cycle_time = rise_time_over_cycle_time,
+            fall_time_over_cycle_time = fall_time_over_cycle_time,
+        )
+
+        signal2 = square_pulse(
+            2e3,
+            duty_cycle = r2,
+            rise_time_over_cycle_time = rise_time_over_cycle_time,
+            fall_time_over_cycle_time = fall_time_over_cycle_time,
+        )
+
+        signal1=np.roll(signal1, -int(2e3*r1/2))
+        signal2=np.roll(signal2, -int(2e3*r2/2))
+
+        signal = np.concatenate([signal1, signal2])
+
+        signal3 = square_pulse(
+            4e3, duty_cycle=r3
+        )
+        signal3 = -np.roll(signal3, int(phase/360*4e3))
+
+        __timeout = self.inst.timeout
+        self.inst.timeout = 10e3
+        self.upload_as(signal * signal3, 'PULSEWAVEFORM')
+        self.waveform = 'USER'
+#        self.waveform = 'USER PULSEWAVEFORM'
+        self.inst.timeout = __timeout
+
     def save_as(self, waveform_name):
         """
         Saves the data in volatile memory as ``waveform_name``
