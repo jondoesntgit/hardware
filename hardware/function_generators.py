@@ -164,16 +164,17 @@ class Agilent_33250A(FunctionGenerator):
         return float(self.inst.query("VOLT?")) * u.volt
 
     @frequency.setter
+    @u.quantity_input(val = u.hertz)
     def frequency(self, val):
 
         # max and min values taken from user manual
-        if val < 1 * u.microhertz:
+        if val.to(u.microhertz) < 1 * u.microhertz:
             raise ValueError("Minimum frequency is 1µHz")
         elif((self.waveform == "SIN" or self.waveform == "SQU") and
-             val > 80 * u.megahertz):
+             val.to(u.megahertz) > 80 * u.megahertz):
             raise ValueError("Max frequency is 80 MHz for %s waves" % self.waveform)
-        elif(self.waveform == "PULS" and (val < 500 * u.microhertz
-                                          or val > 50 * u.megahertz)):
+        elif(self.waveform == "PULS" and (val.to(microhertz) < 500 * u.microhertz
+                                          or val.to(megahertz) > 50 * u.megahertz)):
             raise ValueError("Frequency must be between 500 µHz and 50 MHz for pulse waves")
         self.inst.write('FREQ %i' % val)
         self.logger.info("Frequency set to %i Hz" % val)
@@ -300,15 +301,16 @@ class SRS_DS345(FunctionGenerator):
         return float(f) * u.hertz
 
     @frequency.setter
+    @u.quantity_input(val = u.hertz)
     def frequency(self, val):
         if(self.waveform == "NOIS"):
             raise ValueError("Frequency must remain at 10 MHz when waveform is 'NOISE'")
-        elif(val < 1 * u.microhertz):
+        elif(val.to(u.microhertz) < 1 * u.microhertz):
             raise ValueError("Minimum frequency is 1 µHz")
         elif((self.waveform == "SIN" or self.waveform == "SQ") and
-             val > 30.2 * u.megahertz):
+             val.to(u.megahertz) > 30.2 * u.megahertz):
             raise ValueError("Maximum frequency is 30.2 MHz for %s waves" % self.waveform)
-        elif(self.waveform == "RAMP" and val > 100 * u.kilohertz):
+        elif(self.waveform == "RAMP" and val.to(u.kilohertz) > 100 * u.kilohertz):
             raise ValueError("Maximum frequency is 100 KHz for ramp waves")
         self.inst.write('FREQ %i' % val)
         self.logger.info("Frequency set to %f Hz" % val)
@@ -384,13 +386,14 @@ class HP_33120A(FunctionGenerator):
         return float(self.inst.query("VOLT?")) * u.volt
 
     @frequency.setter
+    @u.quantity_input(val = u.hertz)
     def frequency(self, val):
-        if(val < 100 * u.microhertz):
+        if(val.to(u.microhertz) < 100 * u.microhertz):
             raise ValueError("Minimum frequency is 100 µHz")
         elif((self.waveform == "SIN" or self.waveform == "SQU")
-                and val > 15 * u.megahertz):
+                and val.to(u.megahertz) > 15 * u.megahertz):
             raise ValueError("Maximum frequency is 15 MHz for %s waves" % self.waveform)
-        elif(self.waveform == "RAMP" and val > 100 * u.kilohertz):
+        elif(self.waveform == "RAMP" and val.to(u.kilohertz) > 100 * u.kilohertz):
             raise ValueError("Maximum frequency is 100 KHz for ramp waves")
 
         self.inst.write('FREQ %i' % val)
