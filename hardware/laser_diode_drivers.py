@@ -67,7 +67,7 @@ class ILX_Lightwave_3724B():
         return float(self.inst.query('LAS:LDI?')[:-1]) * u.milliamp
 
     @current.setter
-    @u.wraps(None, u.milliamp)
+    @u.wraps(None, (None, u.milliamp))
     def current(self, val):
         self.inst.write('LAS:LDI %f' % val.to(u.milliamp).magnitude)
         self.logger.info("Current set to %f milliamp" % val.to(u.milliamp).magnitude)

@@ -43,7 +43,7 @@ class MockRotationStage:
         return self._angle
 
     @angle.setter
-    @u.wraps(None, u.degree)
+    @u.wraps(None, (None, u.degree))
     def angle(self, val):
         self._angle = val
         self.logger.info("Angle set to %f degree" % val.to(u.degree).magnitude)
@@ -53,7 +53,7 @@ class MockRotationStage:
         return self._velocity
 
     @velocity.setter
-    @u.wraps(None, u.degree/u.second)
+    @u.wraps(None, (None, u.degree/u.second))
     def velocity(self, val):
         self._velocity = val
         self.logger.info("Velocity set to %f deg/s" % val.to(u.degree/u.second).magnitude)
@@ -100,7 +100,7 @@ class NSC_A1:
         return "Connection to rotation stage server at %s" % self.hostname
 
     @angle.setter
-    @u.wraps(None, u.degree)
+    @u.wraps(None, (None, u.degree))
     def angle(self, val):
         requests.get(self.hostname + '/rot/angle/%f' % val.to(u.degree).magnitude)
         self.logger.info("Angle set to %f degrees" % val.to(u.degree).magnitude)
@@ -121,7 +121,7 @@ class NSC_A1:
         return r.json()['max_angle']
 
     @max_angle.setter
-    @u.wraps(None, u.degree)
+    @u.wraps(None, (None, u.degree))
     def max_angle(self, val):
         requests.get(self.hostname + '/rot/max_angle/%f' % val.to(u.degree).magnitude)
 
@@ -131,7 +131,7 @@ class NSC_A1:
         return r.json()['min_angle']
 
     @min_angle.setter
-    @u.wraps(None, u.degree)
+    @u.wraps(None, (None, u.degree))
     def min_angle(self, val):
         requests.get(self.hostname + '/rot/min_angle/%f' % val.to(u.degree).magnitude)
 

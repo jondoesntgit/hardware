@@ -49,7 +49,7 @@ class MockSpectrumAnalyzer:
         return self._start
 
     @start.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def start(self, val):
         self._start = val
         self.logger.info("Start frequency set to %f Hz" % val.to(u.hertz).magnitude)
@@ -59,7 +59,7 @@ class MockSpectrumAnalyzer:
         return self._stop
 
     @stop.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def stop(self, val):
         self._stop = val
         self.logger.info("Stop frequency set to %f Hz" % val.to(u.hertz).magnitude)
@@ -69,7 +69,7 @@ class MockSpectrumAnalyzer:
         return self._center
 
     @center.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def center(self, val):
         self._center = val
         self.logger.info("Center frequency set to %f Hz" % val.to(u.hertz).magnitude)
@@ -79,7 +79,7 @@ class MockSpectrumAnalyzer:
         return self._span
 
     @span.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def span(self, val):
         self._span = val
         self.logger.info("Span set to %f Hz" % val.to(u.hertz).magnitude)
@@ -89,7 +89,7 @@ class MockSpectrumAnalyzer:
         return self._sweep_time
 
     @sweep_time.setter
-    @u.wraps(None, u.second)
+    @u.wraps(None, (None, u.second))
     def sweep_time(self, val):
         self._sweep_time = val
         self.logger.info("Sweep time set to %f seconds" % val.to(u.second).magnitude)
@@ -99,7 +99,7 @@ class MockSpectrumAnalyzer:
         return self._reference
 
     @reference.setter
-    @u.wraps(None, u.milliwatt)
+    @u.wraps(None, (None, u.milliwatt))
     def reference(self, val):
         self._reference = val
         self.logger.info("Reference set to %f watts" % val.to(u.watt).magnitude)
@@ -109,7 +109,7 @@ class MockSpectrumAnalyzer:
         return self._bandwidth
 
     @bandwidth.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def bandwidth(self, val):
         self._bandwidth = val
         self.logger.info("Bandwidth set to %f Hz" % val.to(u.hertz).magnitude)
@@ -135,7 +135,7 @@ class ANDO_AQ6317B:
         """
         return self.inst.query('*IDN?')
 
-    @u.wraps(None, u.milliseconds)
+    @u.wraps(None, (None, u.milliseconds))
     def set_timeout(self, milliseconds):
         """
         Sets the timeout of the instrument in milliseconds.
@@ -190,7 +190,7 @@ class Rohde_Schwarz_FSEA_20:
         float(self.inst.query('FREQ:CENT?')) * u.hertz
 
     @center.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def center(self, Hz):
         self.inst.write('FREQ:CENT %s' % Hz.to(u.hertz).magnitude)
         self.logger.info("Center set to %s Hz" % Hz.to(u.hertz).magnitude)
@@ -200,7 +200,7 @@ class Rohde_Schwarz_FSEA_20:
         return float(self.inst.query('FREQ:SPAN?')) * u.hertz
 
     @span.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def span(self, Hz):
         self.inst.write('FREQ:SPAN %s' % Hz.to(u.hertz).magnitude)
         self.logger.info("Span set to %s Hz" % Hz.to(u.hertz).magnitude)
@@ -219,7 +219,7 @@ class Rohde_Schwarz_FSEA_20:
         return float(self.inst.query('FREQ:STAR?')) * u.hertz
 
     @start.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def start(self, Hz):
         self.inst.write('FREQ:STAR %s' % Hz.to(u.hertz).magnitude)
         self.logger.info("Start set to %s Hz" % Hz.to(u.hertz).magnitude)
@@ -229,7 +229,7 @@ class Rohde_Schwarz_FSEA_20:
         return float(self.inst.query('FREQ:STOP?')) * u.hertz
 
     @stop.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def stop(self, Hz):
         self.inst.write('FREQ:STOP %s' % Hz.to(u.hertz).magnitude)
         self.logger.info("Stop set to %s Hz" % Hz.to(u.hertz).magnitude)
@@ -239,7 +239,7 @@ class Rohde_Schwarz_FSEA_20:
         return float(self.inst.query('SWEEP:TIME?')) * u.second
 
     @time.setter
-    @u.wraps(None, u.second)
+    @u.wraps(None, (None, u.second))
     def time(self, seconds):
         self.inst.write('SWEEP:TIME %fs' % seconds.to(u.second).magnitude)
         self.logger.info("Sweep time set to %f seconds" % seconds.to(u.second).magnitude)
@@ -249,7 +249,7 @@ class Rohde_Schwarz_FSEA_20:
         return float(self.inst.query('BAND:VID?')) * u.hertz
 
     @vbw.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def vbw(self, Hz):
         self.inst.write('BAND:VID %s' % Hz.to(u.hertz).magnitude)
         self.logger.info("VBW set to %s Hz" % Hz.to(u.hertz).magnitude)
@@ -259,7 +259,7 @@ class Rohde_Schwarz_FSEA_20:
         return float(self.inst.query('BAND?')) * u.hertz
 
     @rbw.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def rbw(self, Hz):
         self.inst.write('BAND %s' % Hz.to(u.hertz).magnitude)
         self.logger.info("RBW set to %s Hz" % Hz.to(u.hertz).magnitude)
