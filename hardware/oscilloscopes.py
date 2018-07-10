@@ -73,7 +73,7 @@ class Agilent_DSO1024A:
         """
         return self.inst.query('*IDN?')
 
-    @u.wraps(None, u.milliseconds)
+    @u.wraps(None, (None, u.milliseconds))
     def set_timeout(self, milliseconds):
         """
         Sets the instrument timeout in milliseconds

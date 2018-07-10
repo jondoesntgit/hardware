@@ -50,7 +50,7 @@ class MockFunctionGenerator:
         return self._frequency
 
     @frequency.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def frequency(self, val):
         self._frequency = val
         self.logger.info("Frequency set to %f Hz" % val.to(u.hertz).magnitude)
@@ -60,7 +60,7 @@ class MockFunctionGenerator:
         return self._voltage
 
     @voltage.setter
-    @u.wraps(None, u.volt)
+    @u.wraps(None, (None, u.volt))
     def voltage(self, val):
         self._voltage = val
         self.logger.info("Voltage set to %f V" % val.to(u.volt).magnitude)
@@ -74,7 +74,7 @@ class MockFunctionGenerator:
         return self._phase
 
     @phase.setter
-    @u.wraps(None, u.degree)
+    @u.wraps(None, (None, u.degree))
     def phase(self, val):
         self._phase = val
         self.logger.info("Phase set to %f degrees" % val.to(u.degree).magnitude)
@@ -115,7 +115,7 @@ class FunctionGenerator:
     #     return float(f) * u.hertz
 
     @frequency.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def frequency(self, val):
         self.inst.write("FREQ: %f" % val.to(u.hertz).magnitude)
         if(hasattr(self, "logger")):
@@ -126,7 +126,7 @@ class FunctionGenerator:
         return float(self.inst.query("VOLT?")) * u.volt
 
     @volt.setter
-    @u.wraps(None, u.volt)
+    @u.wraps(None, (None, u.volt))
     def volt(self, val):
         self.inst.write('VOLT %i' % val.to(u.volt).magnitude)
         if(hasattr(self, "logger")):
@@ -170,7 +170,7 @@ class Agilent_33250A(FunctionGenerator):
         return float(self.inst.query("VOLT?")) * u.volt
 
     @frequency.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def frequency(self, val):
 
         # max and min values taken from user manual
@@ -428,7 +428,7 @@ class SRS_DS345(FunctionGenerator):
         return float(f) * u.hertz
 
     @frequency.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def frequency(self, val):
         if(self.waveform == "NOIS"):
             raise ValueError("Frequency must remain at 10 MHz when waveform is 'NOISE'")
@@ -450,7 +450,7 @@ class SRS_DS345(FunctionGenerator):
         return float(self.inst.query('AMPL?')[:-3]) * u.volt
 
     @voltage.setter
-    @u.wraps(None, u.volt)
+    @u.wraps(None, (None, u.volt))
     def voltage(self, val):
 # list of the max and mins of all the voltages you can have based on the waves
 # set boundaries on voltage inputs
@@ -475,7 +475,7 @@ class SRS_DS345(FunctionGenerator):
         return float(self.inst.query('PHSE?')) * u.degree
 
     @phase.setter
-    @u.wraps(None, u.degree)
+    @u.wraps(None, (None, u.degree))
     def phase(self, val):
         if(self.waveform == "NOIS"):
             raise Exception("Can't set phase when waveform is 'NOISE'")
@@ -518,7 +518,7 @@ class HP_33120A(FunctionGenerator):
         return float(self.inst.query("VOLT?")) * u.volt
 
     @frequency.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def frequency(self, val):
         if(val < 100 * u.microhertz):
             raise ValueError("Minimum frequency is 100 µHz")
@@ -542,7 +542,7 @@ class HP_33120A(FunctionGenerator):
         return float(self.inst.query('PHAS?')) * u.degree
 
     @phase.setter
-    @u.wraps(None, u.degree)
+    @u.wraps(None, (None, u.degree))
     def phase(self, val):
         if(val > 360 * u.degree or val < -360 * u.degree):
             raise ValueError("Phase must be between -360 and 360 degrees")
