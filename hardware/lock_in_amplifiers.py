@@ -190,8 +190,8 @@ class SRS_SR844:
     def phase(self, val):
         if(val > 180 * u.degree or val < -180 * u.degree):
             raise ValueError("Phase must be between -180 and 180 degrees")
-        self.inst.write('PHAS %f' % val.magnitude)
-        self.logger.info("Phase set to %f degrees" % val.magnitude)
+        self.inst.write('PHAS %f' % val.to(u.degree).magnitude)
+        self.logger.info("Phase set to %f degrees" % val.to(u.degree).magnitude)
 
     @property
     def sensitivity(self):
