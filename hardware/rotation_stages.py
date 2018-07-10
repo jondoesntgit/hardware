@@ -96,6 +96,9 @@ class NSC_A1:
         self.logger.info("Angular velocity set to %f deg/s"
                          % val.to(u.degree/u.second).magnitude)
 
+    def identify(self):
+        return "Connection to rotation stage server at %s" % self.hostname
+
     @angle.setter
     @u.wraps(None, u.degree)
     def angle(self, val):
