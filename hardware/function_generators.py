@@ -22,6 +22,7 @@ import visa
 import numpy as np
 import random
 import logging
+import math
 
 from hardware import u
 
@@ -49,18 +50,20 @@ class MockFunctionGenerator:
         return self._frequency
 
     @frequency.setter
+    @u.wraps(None, u.hertz)
     def frequency(self, val):
-        self._frequency = val * u.hertz
-        self.logger.info("Frequency set to %f Hz" % val)
+        self._frequency = val
+        self.logger.info("Frequency set to %f Hz" % val.to(u.hertz).magnitude)
 
     @property
     def voltage(self):
         return self._voltage
 
     @voltage.setter
+    @u.wraps(None, u.volt)
     def voltage(self, val):
-        self._voltage = val * u.volt
-        self.logger.info("Voltage set to %f V" % val)
+        self._voltage = val
+        self.logger.info("Voltage set to %f V" % val.to(u.volt).magnitude)
 
     @property
     def waveform_name(self):
@@ -71,9 +74,10 @@ class MockFunctionGenerator:
         return self._phase
 
     @phase.setter
+    @u.wraps(None, u.degree)
     def phase(self, val):
-        self._phase = val * u.degree
-        self.logger.info("Phase set to %f degrees" % val)
+        self._phase = val
+        self.logger.info("Phase set to %f degrees" % val.to(u.degree).magnitude)
 
     @property
     def duty_cycle(self):
@@ -111,20 +115,22 @@ class FunctionGenerator:
     #     return float(f) * u.hertz
 
     @frequency.setter
+    @u.wraps(None, u.hertz)
     def frequency(self, val):
-        self.inst.write("FREQ: %f" % val)
+        self.inst.write("FREQ: %f" % val.to(u.hertz).magnitude)
         if(hasattr(self, "logger")):
-            self.logger.info("Frequency set to %f Hz" % val)
+            self.logger.info("Frequency set to %f Hz" % val.to(u.hertz).magnitude)
 
     @property
     def volt(self):
         return float(self.inst.query("VOLT?")) * u.volt
 
     @volt.setter
+    @u.wraps(None, u.volt)
     def volt(self, val):
-        self.inst.write('VOLT %i' % val)
+        self.inst.write('VOLT %i' % val.to(u.volt).magnitude)
         if(hasattr(self, "logger")):
-            self.logger.info("Voltage set to %i V" % val)
+            self.logger.info("Voltage set to %i V" % val.to(u.volt).magnitude)
 
 # gathering up reused code in superclass and making these subclasses of that
 # Link to manual: http://www.ece.mtu.edu/labs/EElabs/EE3306/Revisions_2008/agt33250aman.pdf
@@ -164,20 +170,20 @@ class Agilent_33250A(FunctionGenerator):
         return float(self.inst.query("VOLT?")) * u.volt
 
     @frequency.setter
-    @u.quantity_input(val = u.hertz)
+    @u.wraps(None, u.hertz)
     def frequency(self, val):
 
         # max and min values taken from user manual
-        if val.to(u.microhertz) < 1 * u.microhertz:
+        if val < 1 * u.microhertz:
             raise ValueError("Minimum frequency is 1µHz")
         elif((self.waveform == "SIN" or self.waveform == "SQU") and
-             val.to(u.megahertz) > 80 * u.megahertz):
+             val > 80 * u.megahertz):
             raise ValueError("Max frequency is 80 MHz for %s waves" % self.waveform)
-        elif(self.waveform == "PULS" and (val.to(microhertz) < 500 * u.microhertz
-                                          or val.to(megahertz) > 50 * u.megahertz)):
+        elif(self.waveform == "PULS" and (val < 500 * u.microhertz
+                                          or val > 50 * u.megahertz)):
             raise ValueError("Frequency must be between 500 µHz and 50 MHz for pulse waves")
-        self.inst.write('FREQ %i' % val)
-        self.logger.info("Frequency set to %i Hz" % val)
+        self.inst.write('FREQ %i' % val.to(u.hertz).magnitude)
+        self.logger.info("Frequency set to %i Hz" % val.to(u.hertz).magnitude)
 
     # alias
     freq = frequency
@@ -194,8 +200,12 @@ class Agilent_33250A(FunctionGenerator):
 
     @phase.setter
     def phase(self, val):
-        self.inst.write('PHAS %f' % val)
         unit = self.inst.query('UNIT:ANGL?')
+        if (val > 360 or val < -360) and "DEG" in unit:
+            raise ValueError("Phase must be between -360 and 360 degrees")
+        elif (val > 2 * math.pi or val < -2 * math.pi) and "RAD" in unit:
+            raise ValueError("Phase must be between -2π and 2π radians")
+        self.inst.write('PHAS %f' % val)
         self.logger.info("Phase set to %f %s" % (val, unit))
 
     @property
@@ -204,8 +214,10 @@ class Agilent_33250A(FunctionGenerator):
 
     @duty_cycle.setter
     def duty_cycle(self, val):
+        if val > 100 or val < 0:
+            raise ValueError("Invalid duty cycle value given")
         self.inst.write('FUNCtion:SQUare:DCYCLe %f' % val)
-        self.logger.info("Duty cycle set to %i percent" % val)
+        self.logger.info("Duty cycle set to %f percent" % val)
 
     @property
     def waveform(self):
@@ -402,19 +414,19 @@ class SRS_DS345(FunctionGenerator):
         return float(f) * u.hertz
 
     @frequency.setter
-    @u.quantity_input(val = u.hertz)
+    @u.wraps(None, u.hertz)
     def frequency(self, val):
         if(self.waveform == "NOIS"):
             raise ValueError("Frequency must remain at 10 MHz when waveform is 'NOISE'")
-        elif(val.to(u.microhertz) < 1 * u.microhertz):
+        elif(val < 1 * u.microhertz):
             raise ValueError("Minimum frequency is 1 µHz")
         elif((self.waveform == "SIN" or self.waveform == "SQ") and
-             val.to(u.megahertz) > 30.2 * u.megahertz):
+             val > 30.2 * u.megahertz):
             raise ValueError("Maximum frequency is 30.2 MHz for %s waves" % self.waveform)
-        elif(self.waveform == "RAMP" and val.to(u.kilohertz) > 100 * u.kilohertz):
+        elif(self.waveform == "RAMP" and val > 100 * u.kilohertz):
             raise ValueError("Maximum frequency is 100 KHz for ramp waves")
-        self.inst.write('FREQ %i' % val)
-        self.logger.info("Frequency set to %f Hz" % val)
+        self.inst.write('FREQ %i' % val.to(u.hertz).magnitude)
+        self.logger.info("Frequency set to %f Hz" % val.to(u.hertz).magnitude)
 
     # alias
     freq = frequency
@@ -424,6 +436,7 @@ class SRS_DS345(FunctionGenerator):
         return float(self.inst.query('AMPL?')[:-3]) * u.volt
 
     @voltage.setter
+    @u.wraps(None, u.volt)
     def voltage(self, val):
 # list of the max and mins of all the voltages you can have based on the waves
 # set boundaries on voltage inputs
@@ -436,8 +449,9 @@ class SRS_DS345(FunctionGenerator):
 # Noise   10V   10 mV  2.09V  2.09 mV  +19.41 -40.59
 # Arbitrary 10V 10 mV  n.a.  n.a.      n.a.   n.a.
 
-        self.inst.write('AMPL %f' % val)
-        self.logger.info("Voltage set to %i V" % val)
+        self.inst.write('AMPL %f' % val.to(u.volt).magnitude)
+        self.logger.info("Voltage set to %i V" % val.to(u.volt).magnitude)
+
 
     # alias
     volt = voltage
@@ -447,11 +461,14 @@ class SRS_DS345(FunctionGenerator):
         return float(self.inst.query('PHSE?')) * u.degree
 
     @phase.setter
+    @u.wraps(None, u.degree)
     def phase(self, val):
         if(self.waveform == "NOIS"):
             raise Exception("Can't set phase when waveform is 'NOISE'")
-        self.inst.write('PHSE %f' % val)
-        self.logger.info("Phase set to %f" % val)
+        elif val < -360 * u.degree or val > 360 * u.degree:
+            raise ValueError("Phase must be between -360 and 360 degrees")
+        self.inst.write('PHSE %f' % val.to(u.degree).magnitude)
+        self.logger.info("Phase set to %f degree" % val.to(u.degree).magnitude)
 
 
 class HP_33120A(FunctionGenerator):
@@ -487,18 +504,18 @@ class HP_33120A(FunctionGenerator):
         return float(self.inst.query("VOLT?")) * u.volt
 
     @frequency.setter
-    @u.quantity_input(val = u.hertz)
+    @u.wraps(None, u.hertz)
     def frequency(self, val):
-        if(val.to(u.microhertz) < 100 * u.microhertz):
+        if(val < 100 * u.microhertz):
             raise ValueError("Minimum frequency is 100 µHz")
         elif((self.waveform == "SIN" or self.waveform == "SQU")
-                and val.to(u.megahertz) > 15 * u.megahertz):
+                and val > 15 * u.megahertz):
             raise ValueError("Maximum frequency is 15 MHz for %s waves" % self.waveform)
-        elif(self.waveform == "RAMP" and val.to(u.kilohertz) > 100 * u.kilohertz):
+        elif(self.waveform == "RAMP" and val > 100 * u.kilohertz):
             raise ValueError("Maximum frequency is 100 KHz for ramp waves")
 
-        self.inst.write('FREQ %i' % val)
-        self.logger.info("Frequency set to %f Hz" % val)
+        self.inst.write('FREQ %i' % val.to(u.hertz).magnitude)
+        self.logger.info("Frequency set to %f Hz" % val.to(u.hertz).magnitude)
 
     # alias
     freq = frequency
@@ -510,9 +527,12 @@ class HP_33120A(FunctionGenerator):
         return float(self.inst.query('PHAS?')) * u.degree
 
     @phase.setter
+    @u.wraps(None, u.degree)
     def phase(self, val):
-        self.inst.write('PHAS %f' % val)
-        self.logger.info("Phase set to %f" % val)
+        if(val > 360 * u.degree or val < -360 * u.degree):
+            raise ValueError("Phase must be between -360 and 360 degrees")
+        self.inst.write('PHAS %f' % val.to(u.degree).magnitude)
+        self.logger.info("Phase set to %f degree" % val.to(u.degree).magnitude)
 
     @property
     def duty_cycle(self):
@@ -520,6 +540,8 @@ class HP_33120A(FunctionGenerator):
 
     @duty_cycle.setter
     def duty_cycle(self, val):
+        if val < 0 or val > 100:
+            raise ValueError("Invalid duty cycle value given")
         self.inst.write('FUNCtion:SQUare:DCYCLe %f' % val)
         self.logger.info("Duty cycle set to %f percent" % val)
 

@@ -49,63 +49,70 @@ class MockSpectrumAnalyzer:
         return self._start
 
     @start.setter
+    @u.wraps(None, u.hertz)
     def start(self, val):
-        self._start = val * u.hertz
-        self.logger.info("Start frequency set to %f Hz" % val)
+        self._start = val
+        self.logger.info("Start frequency set to %f Hz" % val.to(u.hertz).magnitude)
 
     @property
     def stop(self):
         return self._stop
 
     @stop.setter
+    @u.wraps(None, u.hertz)
     def stop(self, val):
-        self._stop = val * u.hertz
-        self.logger.info("Stop frequency set to %f Hz" % val)
+        self._stop = val
+        self.logger.info("Stop frequency set to %f Hz" % val.to(u.hertz).magnitude)
 
     @property
     def center(self):
         return self._center
 
     @center.setter
+    @u.wraps(None, u.hertz)
     def center(self, val):
-        self._center = val * u.hertz
-        self.logger.info("Center frequency set to %f Hz" % val)
+        self._center = val
+        self.logger.info("Center frequency set to %f Hz" % val.to(u.hertz).magnitude)
 
     @property
     def span(self):
         return self._span
 
     @span.setter
+    @u.wraps(None, u.hertz)
     def span(self, val):
-        self._span = val * u.hertz
-        self.logger.info("Span set to %f Hz" % val)
+        self._span = val
+        self.logger.info("Span set to %f Hz" % val.to(u.hertz).magnitude)
 
     @property
     def sweep_time(self):
         return self._sweep_time
 
     @sweep_time.setter
+    @u.wraps(None, u.second)
     def sweep_time(self, val):
-        self._sweep_time = val * u.second
-        self.logger.info("Sweep time set to %f seconds" % val)
+        self._sweep_time = val
+        self.logger.info("Sweep time set to %f seconds" % val.to(u.second).magnitude)
 
     @property
     def reference(self):
         return self._reference
 
     @reference.setter
+    @u.wraps(None, u.milliwatt)
     def reference(self, val):
-        self._reference = val * u.watt
-        self.logger.info("Reference set to %f watts" % val)
+        self._reference = val
+        self.logger.info("Reference set to %f watts" % val.to(u.watt).magnitude)
 
     @property
     def bandwidth(self):
         return self._bandwidth
 
     @bandwidth.setter
+    @u.wraps(None, u.hertz)
     def bandwidth(self, val):
-        self._bandwidth = val * u.hertz
-        self.logger.info("Bandwidth set to %f Hz" % val)
+        self._bandwidth = val
+        self.logger.info("Bandwidth set to %f Hz" % val.to(u.hertz).magnitude)
 
 
 class ANDO_AQ6317B:
@@ -128,6 +135,7 @@ class ANDO_AQ6317B:
         """
         return self.inst.query('*IDN?')
 
+    @u.wraps(None, u.milliseconds)
     def set_timeout(self, milliseconds):
         """
         Sets the timeout of the instrument in milliseconds.
@@ -135,8 +143,9 @@ class ANDO_AQ6317B:
         Args:
             milliseconds(float): The timeout in milliseconds
         """
-        self.inst.timeout = milliseconds
-        self.logger.info("Timeout set to %f milliseconds" % milliseconds)
+        self.inst.timeout = milliseconds.to(u.milliseconds).magnitude
+        self.logger.info("Timeout set to %f milliseconds"
+                         % milliseconds.to(u.milliseconds).magnitude)
 
     def get_spectrum(self, channel='B'):
         """
@@ -181,18 +190,20 @@ class Rohde_Schwarz_FSEA_20:
         float(self.inst.query('FREQ:CENT?')) * u.hertz
 
     @center.setter
+    @u.wraps(None, u.hertz)
     def center(self, Hz):
-        self.inst.write('FREQ:CENT %s' % Hz)
-        self.logger.info("Center set to %s Hz" % Hz)
+        self.inst.write('FREQ:CENT %s' % Hz.to(u.hertz).magnitude)
+        self.logger.info("Center set to %s Hz" % Hz.to(u.hertz).magnitude)
 
     @property
     def span(self):
         return float(self.inst.query('FREQ:SPAN?')) * u.hertz
 
     @span.setter
+    @u.wraps(None, u.hertz)
     def span(self, Hz):
-        self.inst.write('FREQ:SPAN %s' % Hz)
-        self.logger.info("Span set to %s Hz" % Hz)
+        self.inst.write('FREQ:SPAN %s' % Hz.to(u.hertz).magnitude)
+        self.logger.info("Span set to %s Hz" % Hz.to(u.hertz).magnitude)
 
     @property
     def reference(self):
@@ -208,45 +219,50 @@ class Rohde_Schwarz_FSEA_20:
         return float(self.inst.query('FREQ:STAR?')) * u.hertz
 
     @start.setter
+    @u.wraps(None, u.hertz)
     def start(self, Hz):
-        self.inst.write('FREQ:STAR %s' % Hz)
-        self.logger.info("Start set to %s Hz" % Hz)
+        self.inst.write('FREQ:STAR %s' % Hz.to(u.hertz).magnitude)
+        self.logger.info("Start set to %s Hz" % Hz.to(u.hertz).magnitude)
 
     @property
     def stop(self):
         return float(self.inst.query('FREQ:STOP?')) * u.hertz
 
     @stop.setter
+    @u.wraps(None, u.hertz)
     def stop(self, Hz):
-        self.inst.write('FREQ:STOP %s' % Hz)
-        self.logger.info("Stop set to %s Hz" % Hz)
+        self.inst.write('FREQ:STOP %s' % Hz.to(u.hertz).magnitude)
+        self.logger.info("Stop set to %s Hz" % Hz.to(u.hertz).magnitude)
 
     @property
     def time(self):
         return float(self.inst.query('SWEEP:TIME?')) * u.second
 
     @time.setter
+    @u.wraps(None, u.second)
     def time(self, seconds):
-        self.inst.write('SWEEP:TIME %fs' % seconds)
-        self.logger.info("Sweep time set to %f seconds" % seconds)
+        self.inst.write('SWEEP:TIME %fs' % seconds.to(u.second).magnitude)
+        self.logger.info("Sweep time set to %f seconds" % seconds.to(u.second).magnitude)
 
     @property
     def vbw(self):
         return float(self.inst.query('BAND:VID?')) * u.hertz
 
     @vbw.setter
+    @u.wraps(None, u.hertz)
     def vbw(self, Hz):
-        self.inst.write('BAND:VID %s' % Hz)
-        self.logger.info("VBW set to %s Hz" % Hz)
+        self.inst.write('BAND:VID %s' % Hz.to(u.hertz).magnitude)
+        self.logger.info("VBW set to %s Hz" % Hz.to(u.hertz).magnitude)
 
     @property
     def rbw(self):
         return float(self.inst.query('BAND?')) * u.hertz
 
     @rbw.setter
+    @u.wraps(None, u.hertz)
     def rbw(self, Hz):
-        self.inst.write('BAND %s' % Hz)
-        self.logger.info("RBW set to %s Hz" % Hz)
+        self.inst.write('BAND %s' % Hz.to(u.hertz).magnitude)
+        self.logger.info("RBW set to %s Hz" % Hz.to(u.hertz).magnitude)
 
     @property
     def averages(self):

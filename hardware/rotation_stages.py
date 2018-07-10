@@ -43,18 +43,20 @@ class MockRotationStage:
         return self._angle
 
     @angle.setter
+    @u.wraps(None, u.degree)
     def angle(self, val):
-        self._angle = val * u.degree
-        self.logger.info("Angle set to %f degree" % val)
+        self._angle = val
+        self.logger.info("Angle set to %f degree" % val.to(u.degree).magnitude)
 
     @property
     def velocity(self):
         return self._velocity
 
     @velocity.setter
+    @u.wraps(None, u.degree/u.second)
     def velocity(self, val):
-        self._velocity = val * u.degree/u.second
-        self.logger.info("Velocity set to %f deg/s" % val)
+        self._velocity = val
+        self.logger.info("Velocity set to %f deg/s" % val.to(u.degree/u.second).magnitude)
 
     def rotate(self):
         print("Rotating")
@@ -87,14 +89,18 @@ class NSC_A1:
         return r.json()['velocity'] * u.degree/u.second
 
     @velocity.setter
+    @u.wraps(None, u.degree/u.second)
     def velocity(self, val):
-        requests.get(self.hostname + '/rot/velocity/%f' % val)
-        self.logger.info("Angular velocity set to %f deg/s" % val)
+        requests.get(self.hostname + '/rot/velocity/%f' %
+                     val.to(u.degree/u.second).magnitude)
+        self.logger.info("Angular velocity set to %f deg/s"
+                         % val.to(u.degree/u.second).magnitude)
 
     @angle.setter
+    @u.wraps(None, u.degree)
     def angle(self, val):
-        requests.get(self.hostname + '/rot/angle/%f' % val)
-        self.logger.info("Angle set to %f degrees" % val)
+        requests.get(self.hostname + '/rot/angle/%f' % val.to(u.degree).magnitude)
+        self.logger.info("Angle set to %f degrees" % val.to(u.degree).magnitude)
 
     def rotate(self, direction, background=False):
         if(direction.lower() == "cw" or direction.lower() == "clockwise"):
@@ -112,8 +118,9 @@ class NSC_A1:
         return r.json()['max_angle']
 
     @max_angle.setter
+    @u.wraps(None, u.degree)
     def max_angle(self, val):
-        requests.get(self.hostname + '/rot/max_angle/%f' % val)
+        requests.get(self.hostname + '/rot/max_angle/%f' % val.to(u.degree).magnitude)
 
     @property
     def min_angle(self):
@@ -121,8 +128,9 @@ class NSC_A1:
         return r.json()['min_angle']
 
     @min_angle.setter
+    @u.wraps(None, u.degree)
     def min_angle(self, val):
-        requests.get(self.hostname + '/rot/min_angle/%f' % val)
+        requests.get(self.hostname + '/rot/min_angle/%f' % val.to(u.degree).magnitude)
 
     def reset(self):
         requests.get(self.hostname + '/rot/reset')

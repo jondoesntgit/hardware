@@ -186,9 +186,12 @@ class SRS_SR844:
         return float(self.inst.query('PHAS?')[:-1]) * u.degree
 
     @phase.setter
+    @u.wraps(None, u.degree)
     def phase(self, val):
-        self.inst.write('PHAS %f' % val)
-        self.logger.info("Phase set to %f degrees" % val)
+        if(val > 180 * u.degree or val < -180 * u.degree):
+            raise ValueError("Phase must be between -180 and 180 degrees")
+        self.inst.write('PHAS %f' % val.magnitude)
+        self.logger.info("Phase set to %f degrees" % val.magnitude)
 
     @property
     def sensitivity(self):
@@ -213,10 +216,13 @@ class SRS_SR844:
         return self._time_constant_list[key] * u.second
 
     @time_constant.setter
+    @u.wraps(None, u.second)
     def time_constant(self, val):
-        key = self._time_constant_list.index(val)
+        if val.magnitude not in self._time_constant_list:
+            raise ValueError("Not a valid time constant")
+        key = self._time_constant_list.index(val.magnitude)
         self.inst.write('OFLT %i' % key)
-        self.logger.info("Time constant set to %f seconds" % val)
+        self.logger.info("Time constant set to %f seconds" % val.magnitude)
 
     @property
     def x(self):

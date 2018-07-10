@@ -25,6 +25,11 @@ from hardware import u
 import logging
 
 
+"""
+A mock oscilloscope class to use for testing
+"""
+
+
 class MockOscilloscope:
     def __init__(self, instr_name = None):
         if not instr_name:
@@ -68,6 +73,7 @@ class Agilent_DSO1024A:
         """
         return self.inst.query('*IDN?')
 
+    @u.wraps(None, u.milliseconds)
     def set_timeout(self, milliseconds):
         """
         Sets the instrument timeout in milliseconds
@@ -75,8 +81,9 @@ class Agilent_DSO1024A:
         Args:
             milliseconds (float): The amount of time to wait before timing out
         """
-        self.inst.timeout = milliseconds
-        self.logger.info("Timeout set to %f milliseconds" % milliseconds)
+        self.inst.timeout = milliseconds.to(u.milliseconds).magnitude
+        self.logger.info("Timeout set to %f milliseconds"
+                         % milliseconds.to(u.milliseconds).magnitude)
 
     def single(self):
         """

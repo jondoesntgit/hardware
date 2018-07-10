@@ -40,9 +40,10 @@ class MockLaserDiodeDriver:
         return self._current
 
     @current.setter
+    @u.wraps(None, u.milliamp)
     def current(self, val):
-        self._current = val * u.milliamp
-        self.logger.info("Current set to %f milliamp" % val)
+        self._current = val
+        self.logger.info("Current set to %f milliamp" % val.to(u.milliamp).magnitude)
 
 
 class ILX_Lightwave_3724B():
@@ -66,6 +67,7 @@ class ILX_Lightwave_3724B():
         return float(self.inst.query('LAS:LDI?')[:-1]) * u.milliamp
 
     @current.setter
+    @u.wraps(None, u.milliamp)
     def current(self, val):
-        self.inst.write('LAS:LDI %f' % val)
-        self.logger.info("Current set to %f milliamp" % val)
+        self.inst.write('LAS:LDI %f' % val.to(u.milliamp).magnitude)
+        self.logger.info("Current set to %f milliamp" % val.to(u.milliamp).magnitude)
