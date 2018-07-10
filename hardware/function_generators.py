@@ -256,14 +256,17 @@ class Agilent_33250A(FunctionGenerator):
             raise Exception('Values should be floats between -1 and +1')
         values = ', '.join(map(str, points_array))
         self.inst.write('DATA VOLATILE, %s' % values)
+        self.logger.info("Uploaded %f points to custom waveform"
+                         % len(points_array))
 
-    def set_duty_cycle(self, r, rise_time_over_cycle_time=0, fall_time_over_cycle_time=0):
+    def set_duty_cycle(self, r, rise_time_over_cycle_time=0,
+                       fall_time_over_cycle_time=0):
         from pyfog.waveforms import square_pulse
         signal = square_pulse(
             4e3,
-            duty_cycle = r,
-            rise_time_over_cycle_time = rise_time_over_cycle_time,
-            fall_time_over_cycle_time = fall_time_over_cycle_time,
+            duty_cycle=r,
+            rise_time_over_cycle_time=rise_time_over_cycle_time,
+            fall_time_over_cycle_time=fall_time_over_cycle_time,
         )
 
         __timeout = self.inst.timeout
@@ -273,24 +276,26 @@ class Agilent_33250A(FunctionGenerator):
         self.waveform = 'USER PULSEWAVEFORM'
         self.inst.timeout = __timeout
 
-    def set_double_gate(self, r1, r2, duty_cycle=.50, rise_time_over_cycle_time=0, fall_time_over_cycle_time=0):
+    def set_double_gate(
+            self, r1, r2, duty_cycle=.50, rise_time_over_cycle_time=0,
+            fall_time_over_cycle_time=0):
         from pyfog.waveforms import square_pulse
         signal1 = square_pulse(
             2e3,
-            duty_cycle = r1,
-            rise_time_over_cycle_time = rise_time_over_cycle_time,
-            fall_time_over_cycle_time = fall_time_over_cycle_time,
+            duty_cycle=r1,
+            rise_time_over_cycle_time=rise_time_over_cycle_time,
+            fall_time_over_cycle_time=fall_time_over_cycle_time,
         )
 
         signal2 = square_pulse(
             2e3,
-            duty_cycle = r2,
-            rise_time_over_cycle_time = rise_time_over_cycle_time,
-            fall_time_over_cycle_time = fall_time_over_cycle_time,
+            duty_cycle=r2,
+            rise_time_over_cycle_time=rise_time_over_cycle_time,
+            fall_time_over_cycle_time=fall_time_over_cycle_time,
         )
 
-        signal1=np.roll(signal1, -int(2e3*r1/2))
-        signal2=np.roll(signal2, -int(2e3*r2/2))
+        signal1 = np.roll(signal1, -int(2e3*r1/2))
+        signal2 = np.roll(signal2, -int(2e3*r2/2))
 
         signal = np.concatenate([signal1, signal2])
 
@@ -301,20 +306,22 @@ class Agilent_33250A(FunctionGenerator):
 #        self.waveform = 'USER PULSEWAVEFORM'
         self.inst.timeout = __timeout
 
-    def set_double_gate_no_roll(self, r1, r2, rise_time_over_cycle_time=0, fall_time_over_cycle_time=0):
+    def set_double_gate_no_roll(
+            self, r1, r2, rise_time_over_cycle_time=0,
+            fall_time_over_cycle_time=0):
         from pyfog.waveforms import square_pulse
         signal1 = square_pulse(
             2e3,
-            duty_cycle = r1,
-            rise_time_over_cycle_time = rise_time_over_cycle_time,
-            fall_time_over_cycle_time = fall_time_over_cycle_time,
+            duty_cycle=r1,
+            rise_time_over_cycle_time=rise_time_over_cycle_time,
+            fall_time_over_cycle_time=fall_time_over_cycle_time,
         )
 
         signal2 = square_pulse(
             2e3,
-            duty_cycle = r2,
-            rise_time_over_cycle_time = rise_time_over_cycle_time,
-            fall_time_over_cycle_time = fall_time_over_cycle_time,
+            duty_cycle=r2,
+            rise_time_over_cycle_time=rise_time_over_cycle_time,
+            fall_time_over_cycle_time=fall_time_over_cycle_time,
         )
         signal = np.concatenate([signal1, signal2])
 
@@ -325,24 +332,26 @@ class Agilent_33250A(FunctionGenerator):
 #        self.waveform = 'USER PULSEWAVEFORM'
         self.inst.timeout = __timeout
 
-    def set_double_gate_and_notch(self, r1, r2, r3, phase,  rise_time_over_cycle_time=0, fall_time_over_cycle_time=0):
+    def set_double_gate_and_notch(
+            self, r1, r2, r3, phase, rise_time_over_cycle_time=0,
+            fall_time_over_cycle_time=0):
         from pyfog.waveforms import square_pulse
         signal1 = square_pulse(
             2e3,
-            duty_cycle = r1,
-            rise_time_over_cycle_time = rise_time_over_cycle_time,
-            fall_time_over_cycle_time = fall_time_over_cycle_time,
+            duty_cycl=r1,
+            rise_time_over_cycle_time=rise_time_over_cycle_time,
+            fall_time_over_cycle_time=fall_time_over_cycle_time,
         )
 
         signal2 = square_pulse(
             2e3,
-            duty_cycle = r2,
-            rise_time_over_cycle_time = rise_time_over_cycle_time,
-            fall_time_over_cycle_time = fall_time_over_cycle_time,
+            duty_cycle=r2,
+            rise_time_over_cycle_time=rise_time_over_cycle_time,
+            fall_time_over_cycle_time=fall_time_over_cycle_time,
         )
 
-        signal1=np.roll(signal1, -int(2e3*r1/2))
-        signal2=np.roll(signal2, -int(2e3*r2/2))
+        signal1 = np.roll(signal1, -int(2e3*r1/2))
+        signal2 = np.roll(signal2, -int(2e3*r2/2))
 
         signal = np.concatenate([signal1, signal2])
 
@@ -360,34 +369,37 @@ class Agilent_33250A(FunctionGenerator):
 
     def save_as(self, waveform_name):
         """
-        Saves the data in volatile memory as ``waveform_name``
+        Save the data in volatile memory as ``waveform_name``.
 
         Parameters:
             waveform_name (str): The name of the saved waveform
+
         """
         self.inst.write('DATA:COPY %s' % waveform_name)
         self.logger.info("Data saved as %s" % waveform_name)
 
     def upload_as(self, points_array, waveform_name):
-        """
-        Uploads an array of points to the function generator, and
-        saves them by name ``waveform_name``
+        """Upload an array of points to the function generator.
+
+        This uploads an array of points to the function generator, and
+        save them by name ``waveform_name``.
 
         Parameters:
             points_array (array-like): The waveform shape
             waveform_name (str): The variable name to store in the waveform
                 generator.
+
         """
         self.upload(points_array)
         self.save_as(waveform_name)
 
-# link to user manual: http://www.thinksrs.com/downloads/pdfs/manuals/DS345m.pdf
-
 
 class SRS_DS345(FunctionGenerator):
-    """
-    Hardware wrapper for the Stanford Research Systems DS345
-    Arbitrary Waveform Generator
+    """Stanford Research Systems DS345 Arbitrary Waveform Generator.
+
+    This module provides a python software wrapper for the Stanford Research
+    Systems DS345 Arbitrary Waveform Generator. The user manual is available
+    `online <http://www.thinksrs.com/downloads/pdfs/manuals/DS345m.pdf>`_.
 
     Parameters:
         visa_search_term (str): The address that is passed to
@@ -403,7 +415,9 @@ class SRS_DS345(FunctionGenerator):
         phase (float): The relative phase to other instruments synced through
         the 10 MHz reference clock.
         duty_cycle (float): The duty cycle of the square wave form in percent.
+
     """
+
     def __init__(self, visa_search_term):
         super(SRS_DS345, self).__init__(visa_search_term)
         self.logger = logging.getLogger(__name__ + ".SRS DS345")
@@ -510,7 +524,8 @@ class HP_33120A(FunctionGenerator):
             raise ValueError("Minimum frequency is 100 µHz")
         elif((self.waveform == "SIN" or self.waveform == "SQU")
                 and val > 15 * u.megahertz):
-            raise ValueError("Maximum frequency is 15 MHz for %s waves" % self.waveform)
+            raise ValueError("Maximum frequency is 15 MHz for %s waves"
+                             % self.waveform)
         elif(self.waveform == "RAMP" and val > 100 * u.kilohertz):
             raise ValueError("Maximum frequency is 100 KHz for ramp waves")
 
@@ -558,9 +573,9 @@ class HP_33120A(FunctionGenerator):
             'SIN', 'SQU', 'RAMP', 'PULS', 'NOIS', 'DC', 'USER'
         ]
         if val.upper() in (waveform_list):
+            result = self.inst.write('FUNC %s' % val)
             self.logger.info("Waveform set to %s" % val)
-
-            return self.inst.write('FUNC %s' % val)
+            return result
 
         elif val.upper()[0:4] == 'USER':
             self.logger.info("Waveform set to %s" % val)
@@ -584,6 +599,8 @@ class HP_33120A(FunctionGenerator):
             raise Exception('Values should be floats between -1 and +1')
         values = ', '.join(map(str, points_array))
         self.inst.write('DATA VOLATILE, %s' % values)
+        self.logger.info('%f points loaded into volatile memory'
+                         % len(points_array))
 
     def save_as(self, waveform_name):
         """
@@ -607,3 +624,5 @@ class HP_33120A(FunctionGenerator):
         """
         self.upload(points_array)
         self.save_as(waveform_name)
+        self.logger.info("%f points saved as %s"
+                         % (len(points_array), waveform_name))
