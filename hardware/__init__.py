@@ -1,13 +1,14 @@
-import visa, pyvisa # TODO: perhaps we should try to consolodate thise...
+import visa, pyvisa  # TODO: perhaps we should try to consolodate thise...
 import sys
 import os
-import ctypes
-import pint
+from pint import _DEFAULT_REGISTRY
 import logging
 import datetime
 
-u = pint.UnitRegistry()
 logger = logging.getLogger(__name__)
+
+u = _DEFAULT_REGISTRY
+Q_ = u.Quantity
 
 # use a+ instead to append to the file - useful for tracking settings over the
 # course of several measurements

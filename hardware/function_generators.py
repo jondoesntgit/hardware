@@ -24,7 +24,7 @@ import random
 import logging
 import math
 
-from hardware import u
+from hardware import u, Q_
 
 
 class MockFunctionGenerator:
@@ -159,20 +159,26 @@ class Agilent_33250A(FunctionGenerator):
         super(Agilent_33250A, self).__init__(visa_search_term)
         self.logger = logging.getLogger(__name__ + ".Agilent_33250A")
 
+    def get_volt(self):
+        return float(self.inst.query("VOLT?")) * u.volt
+
+    @u.wraps(None, (None, u.volt))
+    def set_volt(self, val):
+        self.inst.write('VOLT %f' % val)
+        self.logger.info("Voltage set to %f V" % val)
+
+    volt = property(get_volt, set_volt)
+
     # must redefine properties in subclasses
     @property
     def frequency(self):
         f = self.inst.query('FREQ?')
         return float(f) * u.hertz
 
-    @property
-    def volt(self):
-        return float(self.inst.query("VOLT?")) * u.volt
-
     @frequency.setter
-    @u.wraps(None, u.hertz)
+    @u.wraps(None, (None, u.hertz))
     def frequency(self, val):
-
+        val = Q_(val, 'hertz')
         # max and min values taken from user manual
         if val < 1 * u.microhertz:
             raise ValueError("Minimum frequency is 1µHz")
@@ -183,7 +189,7 @@ class Agilent_33250A(FunctionGenerator):
                                           or val > 50 * u.megahertz)):
             raise ValueError("Frequency must be between 500 µHz and 50 MHz for pulse waves")
         self.inst.write('FREQ %i' % val.to(u.hertz).magnitude)
-        self.logger.info("Frequency set to %i Hz" % val.to(u.hertz).magnitude)
+        self.logger.info("Frequency set to %f Hz" % val.to(u.hertz).magnitude)
 
     # alias
     freq = frequency
@@ -199,14 +205,11 @@ class Agilent_33250A(FunctionGenerator):
         return float(self.inst.query('PHAS?')) * u.degree
 
     @phase.setter
+    @u.wraps(None, (None, u.degree))
     def phase(self, val):
-        unit = self.inst.query('UNIT:ANGL?')
-        if (val > 360 or val < -360) and "DEG" in unit:
-            raise ValueError("Phase must be between -360 and 360 degrees")
-        elif (val > 2 * math.pi or val < -2 * math.pi) and "RAD" in unit:
-            raise ValueError("Phase must be between -2π and 2π radians")
+        self.inst.write('UNIT:ANGL DEG')
         self.inst.write('PHAS %f' % val)
-        self.logger.info("Phase set to %f %s" % (val, unit))
+        self.logger.info("Phase set to %f degrees" % val)
 
     @property
     def duty_cycle(self):
@@ -233,14 +236,35 @@ class Agilent_33250A(FunctionGenerator):
         ]
         if val.upper() in (waveform_list):
             self.inst.write('FUNC %s' % val)
-            self.logger.info("Waveform set to %s" % val)
+            self.logger.info("Waveform set to %s." % val)
 
         elif val.upper()[0:4] == 'USER':
             self.inst.write('FUNC:%s' % val)
-            self.logger.info("Waveform set to %s" % val)
+            self.logger.info("Waveform set to %s." % val)
 
         else:
             raise Exception('%s is not a recognized waveform' % val)
+
+    @property
+    def output(self):
+        output_state = self.inst.query('OUTPUT?')
+        if '1' in output_state:
+            return True
+        elif '0' in output_state:
+            return False
+        else:
+            raise ValueError('Could not determine output state.')
+
+    @output.setter
+    def output(self, val):
+        assert type(val) == bool
+        if val:
+            self.inst.write('OUTPUT ON')
+            self.logger.info('Output enabled.')
+        else:
+            self.inst.write('OUTPUT OFF')
+            self.logger.info('Output disabled.')
+
 
     def upload(self, points_array):
         """
@@ -464,7 +488,7 @@ class SRS_DS345(FunctionGenerator):
 # Arbitrary 10V 10 mV  n.a.  n.a.      n.a.   n.a.
 
         self.inst.write('AMPL %f' % val.to(u.volt).magnitude)
-        self.logger.info("Voltage set to %i V" % val.to(u.volt).magnitude)
+        self.logger.info("Voltage set to %f V" % val.to(u.volt).magnitude)
 
 
     # alias
@@ -482,7 +506,7 @@ class SRS_DS345(FunctionGenerator):
         elif val < -360 * u.degree or val > 360 * u.degree:
             raise ValueError("Phase must be between -360 and 360 degrees")
         self.inst.write('PHSE %f' % val.to(u.degree).magnitude)
-        self.logger.info("Phase set to %f degree" % val.to(u.degree).magnitude)
+        self.logger.info("Phase set to %f degrees" % val.to(u.degree).magnitude)
 
 
 class HP_33120A(FunctionGenerator):
