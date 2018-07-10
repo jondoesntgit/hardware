@@ -11,15 +11,15 @@ u = pint.UnitRegistry()
 # use a+ instead to append to the file - useful for tracking settings over the
 # course of several measurements
 
-file = open(datetime.datetime.today().strftime("%y%m%d.log"), "w+")
-
-with file:
+logging_filename = datetime.datetime.today().strftime("%y%m%d.log")
+logging_file = open(logging_filename, 'a')
+with logging_file:
     # load the logging capabilities
-    logging.basicConfig(filename = "instrument_settings.txt",
-                        filemode = "w",
-                        format = '%(datetime.datetime.now())s - %(name)s - %(message)s',
-                        level = logging.INFO)
-
+    logging.basicConfig(
+        filename=logging_filename,
+        filemode="a+",
+        format='%(datetime.datetime.now())s - %(name)s - %(message)s',
+        level=logging.INFO)
 
 # Load the rotation stage if the hostname environment variable is set
 
