@@ -1,8 +1,13 @@
 """Ensures that the rotation stage is working properly."""
 
 import pytest
-from hardware import rot, Q_, u, log_filename
 import time
+
+try:
+    from hardware import rot, Q_, u, log_filename
+except ImportError:
+    pytestmark = pytest.mark.skip
+
 
 pytest.initial_values = {
     "angle": rot.angle,

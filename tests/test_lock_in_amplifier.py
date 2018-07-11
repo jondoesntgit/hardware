@@ -1,6 +1,9 @@
-from hardware import lia
-from hardware import u
-from hardware import file
+"""A set of functions that test the LIA."""
+import pytest
+try:
+    from hardware import u, log_filename, lia
+except ImportError:
+    pytestmark = pytest.mark.skip
 
 
 def test_phase():
