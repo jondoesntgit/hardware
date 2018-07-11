@@ -11,14 +11,14 @@ try:
     awg.output = False
 except NameError:
     pytestmark = pytest.mark.skip
+
     class Dummy:
+        """Dummy class to help Travis skip the tests."""
+
         pass
 
     awg = Dummy()
     awg.output = True
-
-
-
 
 
 @pytest.mark.skipif(awg.output, reason=("sheepishly refusing to change"
