@@ -508,6 +508,7 @@ class SRS_DS345(FunctionGenerator):
         self.logger.info("Phase set to %f degrees." % val)
 
 
+# Link to manual: http://www.hit.bme.hu/~papay/edu/Lab/33120A_Manual.pdf
 class HP_33120A(FunctionGenerator):
     """
     Hardware wrapper for the HP 33120A Arbitrary Waveform Generator
@@ -530,6 +531,26 @@ class HP_33120A(FunctionGenerator):
     def __init__(self, visa_search_term):
         super(HP_33120A, self).__init__(visa_search_term)
         self.logger = logging.getLogger(__name__ + ".HP 33120A")
+
+    @property
+    def output(self):
+        output = self.inst.query("OUTP?")  # OUTPUT?
+        if output == 1:
+            return True
+        elif output == 0:
+            return False
+        else:
+            raise ValueError("Could not determine output")
+
+    @output.setter
+    def output(self, val):
+        assert type(val) == bool
+        if val:
+            self.inst.write('OUTP ON')
+            self.logger.info('Output enabled.')
+        else:
+            self.inst.write('OUTP OFF')
+            self.logger.info('Output disabled.')
 
     @property
     def frequency(self):
