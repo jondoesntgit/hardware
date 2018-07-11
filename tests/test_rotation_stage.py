@@ -5,7 +5,10 @@ import time
 
 try:
     from hardware import rot, Q_, u, log_filename
+    rot
 except ImportError:
+    pytestmark = pytest.mark.skip
+except NameError:
     pytestmark = pytest.mark.skip
 
 

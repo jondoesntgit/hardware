@@ -3,7 +3,10 @@
 import pytest
 try:
     from hardware import u, log_filename, awg
+    awg
 except ImportError:
+    pytestmark = pytest.mark.skip
+except NameError:
     pytestmark = pytest.mark.skip
 
 
