@@ -188,10 +188,10 @@ class SRS_SR844:
     @phase.setter
     @u.wraps(None, (None, u.degree))
     def phase(self, val):
-        if(val > 180 * u.degree or val < -180 * u.degree):
+        if(val > 180 or val < -180):
             raise ValueError("Phase must be between -180 and 180 degrees")
-        self.inst.write('PHAS %f' % val.to(u.degree).magnitude)
-        self.logger.info("Phase set to %f degrees" % val.to(u.degree).magnitude)
+        self.inst.write('PHAS %f' % val)
+        self.logger.info("Phase set to %f degrees." % val)
 
     @property
     def sensitivity(self):
@@ -207,7 +207,7 @@ class SRS_SR844:
         if key not in self._sensitivity_dict:
             raise ValueError("Not a valid sensitivity")
         self.inst.write('SENS %i' % key)
-        self.logger.info("Sensitivity set to %i V" % val)
+        self.logger.info("Sensitivity set to %i V." % val)
         # raise Exception if value isn't in the array (Value Error)
 
     @property
@@ -220,9 +220,9 @@ class SRS_SR844:
     def time_constant(self, val):
         if val.to(u.second).magnitude not in self._time_constant_list:
             raise ValueError("Not a valid time constant")
-        key = self._time_constant_list.index(val.to(u.second).magnitude)
+        key = self._time_constant_list.index(val)
         self.inst.write('OFLT %i' % key)
-        self.logger.info("Time constant set to %f seconds" % val.to(u.second).magnitude)
+        self.logger.info("Time constant set to %f seconds." % val)
 
     @property
     def x(self):

@@ -46,7 +46,7 @@ class MockRotationStage:
     @u.wraps(None, (None, u.degree))
     def angle(self, val):
         self._angle = val
-        self.logger.info("Angle set to %f degree" % val)
+        self.logger.info("Angle set to %f degrees." % val)
 
     @property
     def velocity(self):
@@ -56,7 +56,7 @@ class MockRotationStage:
     @u.wraps(None, (None, u.degree/u.second))
     def velocity(self, val):
         self._velocity = val
-        self.logger.info("Velocity set to %f deg/s" % val)
+        self.logger.info("Velocity set to %f deg/s." % val)
 
     def rotate(self):
         print("Rotating")
@@ -92,7 +92,7 @@ class NSC_A1:
     @u.wraps(None, (None, u.degree/u.second))
     def velocity(self, val):
         requests.get(self.hostname + '/rot/velocity/%f' % val)
-        self.logger.info("Angular velocity set to %f deg/s" % val)
+        self.logger.info("Angular velocity set to %f deg/s." % val)
 
     def identify(self):
         return "Connection to rotation stage server at %s" % self.hostname
@@ -101,7 +101,7 @@ class NSC_A1:
     @u.wraps(None, (None, u.degree))
     def angle(self, val):
         requests.get(self.hostname + '/rot/angle/%f' % val)
-        self.logger.info("Angle set to %f degrees" % val)
+        self.logger.info("Angle set to %f degrees." % val)
 
     def rotate(self, direction, background=False):
         if(direction.lower() == "cw" or direction.lower() == "clockwise"):
