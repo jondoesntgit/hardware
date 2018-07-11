@@ -8,16 +8,16 @@ try:
     rot
 except ImportError:
     pytestmark = pytest.mark.skip
+
+try:
+    pytest.initial_values = {
+        "angle": rot.angle,
+        "velocity": rot.velocity,
+        "max_angle": rot.max_angle,
+        "min_angle": rot.min_angle
+    }
 except NameError:
     pytestmark = pytest.mark.skip
-
-
-pytest.initial_values = {
-    "angle": rot.angle,
-    "velocity": rot.velocity,
-    "max_angle": rot.max_angle,
-    "min_angle": rot.min_angle
-}
 
 
 def test_units():

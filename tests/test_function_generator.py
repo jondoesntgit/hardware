@@ -3,15 +3,17 @@
 import pytest
 try:
     from hardware import u, log_filename, awg
-    awg
 except ImportError:
     pytestmark = pytest.mark.skip
+
+try:
+    pytest.initial_output_state = awg.output
+    awg.output = False
 except NameError:
     pytestmark = pytest.mark.skip
 
 
-pytest.initial_output_state = awg.output
-awg.output = False
+
 
 
 @pytest.mark.skipif(awg.output, reason=("sheepishly refusing to change"
