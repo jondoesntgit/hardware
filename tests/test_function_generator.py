@@ -11,6 +11,11 @@ try:
     awg.output = False
 except NameError:
     pytestmark = pytest.mark.skip
+    class Dummy:
+        pass
+
+    awg = Dummy()
+    awg.output = True
 
 
 
