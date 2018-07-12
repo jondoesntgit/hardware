@@ -1,20 +1,19 @@
 """General tests for all function generators."""
 
-from hardware import u, log_filename, awg
 import pytest
 
 try:
+    from hardware import u, log_filename, awg
     pytest.initial_output_state = awg.output
     awg.output = False
-except NameError:
+except (ImportError, NameError):
     pytestmark = pytest.mark.skip
 
     class Dummy:
         """Dummy class to help Travis skip the tests."""
-
         pass
 
-
+    awg.output = False
 
 @pytest.mark.skipif(awg.output, reason=("sheepishly refusing to change"
                     "settings while output is enabled"))
