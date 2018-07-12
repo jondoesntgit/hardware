@@ -94,4 +94,5 @@ def test_restore_function_generator_output_state():
     with open(log_filename) as file:
         string1 = "Output enabled."
         string2 = "Output disabled."
-        assert string1 in file.read() or string2 in file.read()
+        contents = file.read()
+        assert string1 in contents or string2 in contents
