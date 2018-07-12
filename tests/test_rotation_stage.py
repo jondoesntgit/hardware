@@ -1,6 +1,11 @@
 """Ensures that the rotation stage is working properly."""
 
 import pytest
+
+try:
+    from hardware import rot, Q_, u, log_filename
+except (NameError, ImportError):
+    pytestmark = pytest.mark.skip
 import time
 
 try:

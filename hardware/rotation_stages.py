@@ -134,31 +134,37 @@ class NSC_A1:
         requests.get(self.hostname + '/rot/min_angle/%f' % val)
 
     def reset(self):
+        """Zero the angle."""
         requests.get(self.hostname + '/rot/reset')
 
+    @u.wraps(None, (None, u.degree))
     def cw(self, val, background=False):
         """
         Rotates clockwise through a specified angle.
 
         Args:
             val (float): The amount to rotate in degrees
-            background (bool, optional): If true, runs the rotation in the background
-            in order to allow other commands to be executed while the stage rotates.
+            background (bool, optional): If true, runs the rotation in the
+            background in order to allow other commands to be executed while
+            the stage rotates.
         """
         if background:
             def worker(url):
                 requests.get(url)
-            threading.Thread(target=worker, args = (self.hostname + '/rot/cw/%f' % val,)).start()
+            threading.Thread(target=worker, args=(
+                self.hostname + '/rot/cw/%f' % val,)).start()
         else:
-            requests.get(self.hostname + '/rot/cw/%f' % val )
+            requests.get(self.hostname + '/rot/cw/%f' % val)
 
+    @u.wraps(None, (None, u.degree))
     def ccw(self, val, background=False):
         """
         Rotates counterclockwise through a specified angle.
 
         Args:
             val (float): The amount to rotate in degrees
-            background (bool, optional): If true, runs the rotation in the background
-            in order to allow other commands to be executed while the stage rotates.
+            background (bool, optional): If true, runs the rotation in
+            the background in order to allow other commands to be
+            executed while the stage rotates.
         """
-        self.cw(-val, background)
+        self.cw(-val * u.degree, background)

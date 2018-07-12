@@ -164,7 +164,7 @@ class ANDO_AQ6317B:
         wavelength = np.array(wavelength_string[:-2].split(','))
         wavelength = wavelength.astype(np.float)[2:]
 
-        return wavelength * u.nanometer, power
+        return wavelength, power
         # pint doesn't have units for dBm
 
     # Alias
@@ -191,9 +191,8 @@ class Rohde_Schwarz_FSEA_20:
     @center.setter
     @u.wraps(None, (None, u.hertz))
     def center(self, Hz):
-        # previously used  %s instead of %f
-        self.inst.write('FREQ:CENT %f' % Hz)
-        self.logger.info("Center set to %f Hz." % Hz)
+        self.inst.write('FREQ:CENT %s' % str(Hz))
+        self.logger.info("Center set to %s Hz." % str(Hz))
 
     @property
     def span(self):
@@ -202,9 +201,8 @@ class Rohde_Schwarz_FSEA_20:
     @span.setter
     @u.wraps(None, (None, u.hertz))
     def span(self, Hz):
-        # previously used %s instead of %f
-        self.inst.write('FREQ:SPAN %f' % Hz)
-        self.logger.info("Span set to %f Hz." % Hz)
+        self.inst.write('FREQ:SPAN %s' % str(Hz))
+        self.logger.info("Span set to %s Hz." % str(Hz))
 
     @property
     def reference(self):
@@ -213,9 +211,8 @@ class Rohde_Schwarz_FSEA_20:
     @reference.setter
     @u.wraps(None, (None, u.watt))
     def reference(self, power):
-        # previously used %s instead of %f
-        self.inst.write("DISPLAY:TRACE:Y:RLEVEL %f" % power)
-        self.logger.info("Reference set to %f watts." % power)
+        self.inst.write("DISPLAY:TRACE:Y:RLEVEL %s" % str(power))
+        self.logger.info("Reference set to %s watts." % str(power))
 
     @property
     def start(self):
@@ -224,9 +221,8 @@ class Rohde_Schwarz_FSEA_20:
     @start.setter
     @u.wraps(None, (None, u.hertz))
     def start(self, Hz):
-        # previously used %s instead of %f
-        self.inst.write('FREQ:STAR %f' % Hz)
-        self.logger.info("Start set to %f Hz." % Hz)
+        self.inst.write('FREQ:STAR %s' % str(Hz))
+        self.logger.info("Start set to %s Hz." % str(Hz))
 
     @property
     def stop(self):
@@ -235,9 +231,8 @@ class Rohde_Schwarz_FSEA_20:
     @stop.setter
     @u.wraps(None, (None, u.hertz))
     def stop(self, Hz):
-        # previously used %s instead of %f
-        self.inst.write('FREQ:STOP %f' % Hz)
-        self.logger.info("Stop set to %f Hz." % Hz)
+        self.inst.write('FREQ:STOP %s' % str(Hz))
+        self.logger.info("Stop set to %s Hz." % str(Hz))
 
     @property
     def time(self):
@@ -246,8 +241,8 @@ class Rohde_Schwarz_FSEA_20:
     @time.setter
     @u.wraps(None, (None, u.second))
     def time(self, seconds):
-        self.inst.write('SWEEP:TIME %fs' % seconds)
-        self.logger.info("Sweep time set to %f seconds." % seconds)
+        self.inst.write('SWEEP:TIME %s' % str(seconds))
+        self.logger.info("Sweep time set to %s seconds." % str(seconds))
 
     @property
     def vbw(self):
@@ -256,9 +251,8 @@ class Rohde_Schwarz_FSEA_20:
     @vbw.setter
     @u.wraps(None, (None, u.hertz))
     def vbw(self, Hz):
-        # previously usd %s instead of %f
-        self.inst.write('BAND:VID %f' % Hz)
-        self.logger.info("VBW set to %f Hz." % Hz)
+        self.inst.write('BAND:VID %s' % str(Hz))
+        self.logger.info("VBW set to %s Hz." % str(Hz))
 
     @property
     def rbw(self):
@@ -267,9 +261,8 @@ class Rohde_Schwarz_FSEA_20:
     @rbw.setter
     @u.wraps(None, (None, u.hertz))
     def rbw(self, Hz):
-        # previously used %s instead of %f
-        self.inst.write('BAND %f' % Hz)
-        self.logger.info("RBW set to %f Hz." % Hz)
+        self.inst.write('BAND %s' % str(Hz))
+        self.logger.info("RBW set to %s Hz." % str(Hz))
 
     @property
     def averages(self):

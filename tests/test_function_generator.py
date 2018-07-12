@@ -1,30 +1,38 @@
 """General tests for all function generators."""
 
 import pytest
+import pyvisa
+from decimal import getcontext, Decimal
 try:
     from hardware import u, log_filename, awg
 except ImportError:
     pytestmark = pytest.mark.skip
 
+# TODO: HP awg can't change output from remote interface, find a way to test
+# safely
+
 try:
     pytest.initial_output_state = awg.output
     awg.output = False
-except NameError:
+
+# if it's the HP awg, it won't have the output attribute
+except AttributeError:
+    pass
+
+except (NameError):
     pytestmark = pytest.mark.skip
+
     class Dummy:
         pass
+    if(hasattr(awg, "output")):
+        awg = Dummy()
+        awg.output = True
 
-    awg = Dummy()
-    awg.output = True
 
-
-
-@pytest.mark.skipif(awg.output, reason=("sheepishly refusing to change"
-                    "settings while output is enabled"))
+@pytest.mark.skipif(hasattr(awg, "output") and awg.output, reason=("sheepishly"
+                    "refusing to change settings while output is enabled"))
 def test_frequency():
     """Ensure the hardware can modify the frequency."""
-    if awg.output is True:
-        return
 
     # Testing frequency
     freq = awg.frequency
@@ -37,10 +45,11 @@ def test_frequency():
     awg.frequency = freq
 
 
-@pytest.mark.skipif(awg.output, reason=("sheepishly refusing to change"
-                    "settings while output is enabled"))
+@pytest.mark.skipif(hasattr(awg, "output") and awg.output, reason=("sheepishly"
+                    "refusing to change settings while output is enabled"))
 def test_voltage():
     """Ensure the hardware can modify the voltage."""
+
     assert awg.volt.units == "volt"
     initial_voltage = awg.voltage
     awg.voltage = 1 * u.volt
@@ -51,20 +60,25 @@ def test_voltage():
     awg.voltage = initial_voltage
 
 
-@pytest.mark.skipif(awg.output, reason=("sheepishly refusing to change"
-                    "settings while output is enabled"))
+@pytest.mark.skipif(hasattr(awg, "output") and awg.output, reason=("sheepishly"
+                    "refusing to change settings while output is enabled"))
 def test_phase():
     """Ensure the hardware can modify the phase."""
-    assert awg.phase.units == "degree"
+
+    assert awg.phase.units == u.degree or awg.phase.units == u.radian
     try:
         awg.phase = 700 * u.degree
     except(ValueError):
         print("Invalid phase successfully caught in awg")
 
     awg.phase = 120 * u.degree
-    
+
     with open(log_filename) as file:
-        assert ("Phase set to %f degrees." % awg.phase.magnitude) in file.read()
+        string1 = "Phase set to %f degrees." % awg.phase.magnitude
+        getcontext().prec = 5
+        value = Decimal(awg.phase.magnitude)/Decimal(1.0)
+        string2 = "Phase set to %f radians." % value
+        assert (string2 in file.read() or string1 in file.read())
 
 
 def test_waveform():
@@ -86,6 +100,8 @@ def test_waveform():
     awg.waveform = initial_waveform
 
 
+@pytest.mark.skipif(not hasattr(awg, "output"), reason=("HP awg does not have "
+                                                        "output attribute"))
 def test_restore_function_generator_output_state():
     """Finally, return the function generator to original output mode."""
     if awg.output != pytest.initial_output_state:

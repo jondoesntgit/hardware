@@ -23,6 +23,7 @@ import numpy as np
 import random
 import logging
 import math
+from decimal import getcontext, Decimal
 
 from hardware import u, Q_
 
@@ -178,7 +179,6 @@ class Agilent_33250A(FunctionGenerator):
     @frequency.setter
     @u.wraps(None, (None, u.hertz))
     def frequency(self, val):
-        val = Q_(val, 'hertz')
         # max and min values taken from user manual
         if val < 1e-6:
             raise ValueError("Minimum frequency is 1µHz")
@@ -504,6 +504,7 @@ class SRS_DS345(FunctionGenerator):
             raise Exception("Can't set phase when waveform is 'NOISE'")
         elif val < -360 or val > 360 :
             raise ValueError("Phase must be between -360 and 360 degrees")
+
         self.inst.write('PHSE %f' % val)
         self.logger.info("Phase set to %f degrees." % val)
 
@@ -533,33 +534,9 @@ class HP_33120A(FunctionGenerator):
         self.logger = logging.getLogger(__name__ + ".HP 33120A")
 
     @property
-    def output(self):
-        output = self.inst.query("OUTP?")  # OUTPUT?
-        if output == 1:
-            return True
-        elif output == 0:
-            return False
-        else:
-            raise ValueError("Could not determine output")
-
-    @output.setter
-    def output(self, val):
-        assert type(val) == bool
-        if val:
-            self.inst.write('OUTP ON')
-            self.logger.info('Output enabled.')
-        else:
-            self.inst.write('OUTP OFF')
-            self.logger.info('Output disabled.')
-
-    @property
     def frequency(self):
         f = self.inst.query('FREQ?')
         return float(f) * u.hertz
-
-    @property
-    def volt(self):
-        return float(self.inst.query("VOLT?")) * u.volt
 
     @frequency.setter
     @u.wraps(None, (None, u.hertz))
@@ -576,6 +553,16 @@ class HP_33120A(FunctionGenerator):
         self.inst.write('FREQ %i' % val)
         self.logger.info("Frequency set to %f Hz." % val)
 
+    def get_volt(self):
+        return float(self.inst.query("VOLT?")) * u.volt
+
+    @u.wraps(None, (None, u.volt))
+    def set_volt(self, val):
+        self.inst.write('VOLT %f' % val)
+        self.logger.info("Voltage set to %f V." % val)
+
+    volt = property(get_volt, set_volt)
+
     # alias
     freq = frequency
     # alias
@@ -583,15 +570,17 @@ class HP_33120A(FunctionGenerator):
 
     @property
     def phase(self):
-        return float(self.inst.query('PHAS?')) * u.degree
+        return float(self.inst.query('PHAS?')) * u.radian
 
     @phase.setter
-    @u.wraps(None, (None, u.degree))
+    @u.wraps(None, (None, u.radian))
     def phase(self, val):
-        if(val > 360 or val < -360):
-            raise ValueError("Phase must be between -360 and 360 degrees")
+        if(val > 2 * math.pi or val < -2 * math.pi):
+            raise ValueError("Phase must be between -2π and 2π radians")
         self.inst.write('PHAS %f' % val)
-        self.logger.info("Phase set to %f degrees." % val)
+        getcontext().prec = 5
+        value = Decimal(val)/Decimal(1.0)
+        self.logger.info("Phase set to %f radians." % value)
 
     @property
     def duty_cycle(self):
@@ -618,11 +607,11 @@ class HP_33120A(FunctionGenerator):
         ]
         if val.upper() in (waveform_list):
             result = self.inst.write('FUNC %s' % val)
-            self.logger.info("Waveform set to %s" % val)
+            self.logger.info("Waveform set to %s." % val)
             return result
 
         elif val.upper()[0:4] == 'USER':
-            self.logger.info("Waveform set to %s" % val)
+            self.logger.info("Waveform set to %s." % val)
 
             return self.inst.write('FUNC:%s' % val)
 
