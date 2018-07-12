@@ -81,9 +81,8 @@ class Agilent_DSO1024A:
         Args:
             milliseconds (float): The amount of time to wait before timing out
         """
-        self.inst.timeout = milliseconds.to(u.milliseconds).magnitude
-        self.logger.info("Timeout set to %f milliseconds"
-                         % milliseconds.to(u.milliseconds).magnitude)
+        self.inst.timeout = milliseconds
+        self.logger.info("Timeout set to %f milliseconds." % milliseconds)
 
     def single(self):
         """

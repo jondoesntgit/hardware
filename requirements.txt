@@ -3,4 +3,3 @@ pyvisa
 pyserial
 sphinx
 pint
-pytest

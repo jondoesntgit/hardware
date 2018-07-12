@@ -16,8 +16,6 @@ def test_phase():
     with pytest.raises(ValueError):
         lia.phase = 200 * u.degree
 
-    lia.phase = 100 * u.degree
-
     # change in logging file
     with open(log_filename) as file:
         string = "Phase set to %f" % lia.phase.magnitude

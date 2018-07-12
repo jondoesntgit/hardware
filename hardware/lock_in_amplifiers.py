@@ -188,10 +188,10 @@ class SRS_SR844:
     @phase.setter
     @u.wraps(None, (None, u.degree))
     def phase(self, val):
-        if(val > 180 or val < -180 ):
+        if(val > 180 or val < -180):
             raise ValueError("Phase must be between -180 and 180 degrees")
         self.inst.write('PHAS %f' % val)
-        self.logger.info("Phase set to %f degrees" % val)
+        self.logger.info("Phase set to %f degrees." % val)
 
     @property
     def sensitivity(self):
@@ -223,7 +223,7 @@ class SRS_SR844:
             raise ValueError("Not a valid time constant")
         key = self._time_constant_list.index(val)
         self.inst.write('OFLT %i' % key)
-        self.logger.info("Time constant set to %f seconds" % val)
+        self.logger.info("Time constant set to %f seconds." % val)
 
     @property
     def x(self):

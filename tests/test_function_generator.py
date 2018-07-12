@@ -1,10 +1,7 @@
 """General tests for all function generators."""
 
+from hardware import u, log_filename, awg
 import pytest
-try:
-    from hardware import u, log_filename, awg
-except ImportError:
-    pytestmark = pytest.mark.skip
 
 try:
     pytest.initial_output_state = awg.output
@@ -17,8 +14,6 @@ except NameError:
 
         pass
 
-    awg = Dummy()
-    awg.output = True
 
 
 @pytest.mark.skipif(awg.output, reason=("sheepishly refusing to change"
