@@ -13,6 +13,7 @@ except (ImportError, NameError):
         """Dummy class to help Travis skip the tests."""
         pass
 
+    awg = Dummy()
     awg.output = False
 
 @pytest.mark.skipif(awg.output, reason=("sheepishly refusing to change"
