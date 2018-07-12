@@ -186,7 +186,7 @@ class NI_9215:
             self.task.StopTask()
             self.task.ClearTask()
             self.task = None
-            return self.data
+            return self.data * u.volts
 
     class FOG_DAQ_Task(Task):
         def __init__(self, daq, seconds, rate, oversampling_ratio, max_voltage,
@@ -371,7 +371,7 @@ class NI_9215:
             return self.rate
         else:
             from hardware import lia
-            rate = .1/lia.time_constant
+            rate = (.1/lia.time_constant).to('Hz').magnitude
             return max(2, rate)
 
     def _get_max_voltage(self, max_voltage):
@@ -380,7 +380,9 @@ class NI_9215:
             # used the passed max_voltage
             return max_voltage
         elif self.max_voltage:
-            return self.max_voltage * u.volt
+            return self.max_voltage  # * u.volt ... not ready to implement yet
         else:
             from hardware import lia
-            return lia.sensitivity * u.volt
+
+            # ... not ready to implement yet
+            return lia.sensitivity.to('volt').magnitude  # * u.volt
