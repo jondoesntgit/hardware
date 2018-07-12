@@ -178,7 +178,6 @@ class Agilent_33250A(FunctionGenerator):
     @frequency.setter
     @u.wraps(None, (None, u.hertz))
     def frequency(self, val):
-        val = Q_(val, 'hertz')
         # max and min values taken from user manual
         if val < 1e-6:
             raise ValueError("Minimum frequency is 1µHz")

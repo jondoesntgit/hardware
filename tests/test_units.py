@@ -1,7 +1,7 @@
 import hardware
 from hardware import u
 import pint
-import pytests
+import pytest
 
 def test_unit_registry():
     assert type(u) == pint.registry.UnitRegistry
