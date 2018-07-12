@@ -383,6 +383,7 @@ class Gyro:
         self.notify('Reached max duration')
         tmb.stop()
 
+
     def adev_checker(self, tmb, period=5, threshold=5):
         """Check every {period} seconds until ADev max climbs {threshold} dB above ADev min"""
         while True:
@@ -401,6 +402,7 @@ class Gyro:
                 self.notify('Sampling rate too small. Cannot resolve drift')
                 break
         tmb.stop()
+
 
     def notify(self, msg):
         """Some function we can use to notify the user that a thread has finished."""
