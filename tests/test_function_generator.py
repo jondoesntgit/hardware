@@ -1,10 +1,22 @@
 """General tests for all function generators."""
 
-from hardware import u, log_filename, awg
 import pytest
+try:
+    from hardware import u, log_filename, awg
+except ImportError:
+    pytestmark = pytest.mark.skip
 
-pytest.initial_output_state = awg.output
-awg.output = False
+try:
+    pytest.initial_output_state = awg.output
+    awg.output = False
+except NameError:
+    pytestmark = pytest.mark.skip
+    class Dummy:
+        pass
+
+    awg = Dummy()
+    awg.output = True
+
 
 
 @pytest.mark.skipif(awg.output, reason=("sheepishly refusing to change"
@@ -20,7 +32,7 @@ def test_frequency():
     awg.frequency = 100 * u.kilohertz
 
     with open(log_filename) as file:
-        string = "Frequency set to %f Hz" % awg.frequency.magnitude
+        string = "Frequency set to %f Hz." % awg.frequency.magnitude
         assert string in file.read()
     awg.frequency = freq
 
@@ -32,8 +44,9 @@ def test_voltage():
     assert awg.volt.units == "volt"
     initial_voltage = awg.voltage
     awg.voltage = 1 * u.volt
+
     with open(log_filename) as file:
-        string = "Voltage set to %f V" % awg.voltage.magnitude
+        string = "Voltage set to %f V." % awg.voltage.magnitude
         assert string in file.read()
     awg.voltage = initial_voltage
 
@@ -49,8 +62,9 @@ def test_phase():
         print("Invalid phase successfully caught in awg")
 
     awg.phase = 120 * u.degree
+    
     with open(log_filename) as file:
-        assert ("Phase set to %f degrees" % awg.phase.magnitude) in file.read()
+        assert ("Phase set to %f degrees." % awg.phase.magnitude) in file.read()
 
 
 def test_waveform():
