@@ -1,6 +1,9 @@
-from hardware import lia
-from hardware import u
-from hardware import log_filename
+"""A set of functions that test the LIA."""
+import pytest
+try:
+    from hardware import u, log_filename, lia
+except ImportError:
+    pytestmark = pytest.mark.skip
 
 
 def test_phase():
@@ -21,13 +24,14 @@ def test_phase():
 
 def test_sensitivity():
     # units in volts
-    sensitivity = .1 * u.hectovolt
-    lia.sensitvity = sensitivity
+    sensitivity = .01 * u.hectovolt
+    lia.sensitivity = sensitivity
     assert lia.sensitivity.units == u.volt
-
     # change in logging file
+
     with(open(log_filename)) as log_file:
-        assert ("Sensitivity set to %f V." % lia.sensitivity.magnitude) in log_file.read()
+        assert("Sensitivity set to %f V." % lia.sensitivity.magnitude) in log_file.read()
+        # lia.sensitivity.magnitude = .0003
 
 
 def test_identify():

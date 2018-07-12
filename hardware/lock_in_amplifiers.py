@@ -199,6 +199,7 @@ class SRS_SR844:
         return self._sensitivity_dict[key]['Vrms'] * u.volt
 
     @sensitivity.setter
+    @u.wraps(None, (None, u.volt))
     def sensitivity(self, val):
         key = [d['Vrms'] for d in self._sensitivity_dict.values()].index(val)
         # create array of Vrms values from dictionary by iterating through values
@@ -207,7 +208,7 @@ class SRS_SR844:
         if key not in self._sensitivity_dict:
             raise ValueError("Not a valid sensitivity")
         self.inst.write('SENS %i' % key)
-        self.logger.info("Sensitivity set to %i V." % val)
+        self.logger.info("Sensitivity set to %f V." % val)
         # raise Exception if value isn't in the array (Value Error)
 
     @property
@@ -218,7 +219,7 @@ class SRS_SR844:
     @time_constant.setter
     @u.wraps(None, (None, u.second))
     def time_constant(self, val):
-        if val.to(u.second).magnitude not in self._time_constant_list:
+        if val not in self._time_constant_list:
             raise ValueError("Not a valid time constant")
         key = self._time_constant_list.index(val)
         self.inst.write('OFLT %i' % key)
