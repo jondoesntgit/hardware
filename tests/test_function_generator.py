@@ -1,40 +1,31 @@
 """General tests for all function generators."""
 
 import pytest
-import pyvisa
 from decimal import getcontext, Decimal
-try:
-    from hardware import u, log_filename, awg
-except ImportError:
-    pytestmark = pytest.mark.skip
 
-# TODO: HP awg can't change output from remote interface, find a way to test
-# safely
 
-try:
-    pytest.initial_output_state = awg.output
-    awg.output = False
+class Dummy:
+    """Helps the decorators to mark functions to skip if awg isn't loaded."""
 
-# if it's the HP awg, it won't have the output attribute
-except AttributeError:
     pass
 
-except (NameError):
-    pytestmark = pytest.mark.skip
 
-    class Dummy:
-        pass
-    if(hasattr(awg, "output")):
-        awg = Dummy()
-        awg.output = True
+# if it's the HP awg, it won't have the output attribute
+# TODO: HP awg can't change output from remote interface, find a way to test
+try:
+    from hardware import u, log_filename, awg
+    pytest.initial_output_state = awg.output
+    awg.output = False
+except (ImportError, AttributeError, NameError):  # awg can't be imported
+    pytestmark = pytest.mark.skip
+    awg = Dummy()
+    awg.output = True
 
 
 @pytest.mark.skipif(hasattr(awg, "output") and awg.output, reason=("sheepishly"
                     "refusing to change settings while output is enabled"))
 def test_frequency():
     """Ensure the hardware can modify the frequency."""
-
-    # Testing frequency
     freq = awg.frequency
     assert freq.units == "hertz"
     awg.frequency = 100 * u.kilohertz
@@ -49,7 +40,6 @@ def test_frequency():
                     "refusing to change settings while output is enabled"))
 def test_voltage():
     """Ensure the hardware can modify the voltage."""
-
     assert awg.volt.units == "volt"
     initial_voltage = awg.voltage
     awg.voltage = 1 * u.volt
@@ -64,7 +54,6 @@ def test_voltage():
                     "refusing to change settings while output is enabled"))
 def test_phase():
     """Ensure the hardware can modify the phase."""
-
     assert awg.phase.units == u.degree or awg.phase.units == u.radian
     try:
         awg.phase = 700 * u.degree
