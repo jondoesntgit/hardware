@@ -2,4 +2,5 @@ numpy
 pyvisa
 pyserial
 sphinx
-coveralls
+pint
+pytest

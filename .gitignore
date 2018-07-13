@@ -3,3 +3,8 @@ __pycache__/
 .eggs
 .cache
 .coverage
+
+coverage\.xml
+*.log
+
+\.pytest_cache/v/cache/

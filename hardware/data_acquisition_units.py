@@ -7,18 +7,51 @@ Data Acquisition Units
    :synopsis: DAQ Unit Wrappers
 
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
+.. moduleauthor:: Anjali Thontakudi
 """
 
 try:
     from PyDAQmx import *
 except:
     print("It seems that niDAQmx is not installed on this system.")
-
 import numpy
 import ctypes
 from ctypes import byref
 import queue
 import time
+from hardware import u
+import random
+
+
+class MockDAQ:
+    """
+    This class acts as a dummy version of the NI 9215 DAQ
+
+    Parameters:
+        instr_name (str, optional): The name of the instrument
+
+    Attributes:
+        name (str): The DAQ name
+        data (list): A list of random ints between 0 and 9
+    """
+
+    def __init__(self, instr_name = None):
+        if not instr_name:
+            self.name = "DAQ -NI9215 "
+        else:
+            self.name = instr_name
+
+    def identify(self):
+        return self.name
+
+    def read(self, rate = 5, timeout = 5):
+        self.data = list()
+        for x in range(0, rate*timeout):
+            self.data.append(random.randint(0, 10))
+        return self.data
+
+    def stop(self):
+        print("Stopped")
 
 
 class NI_9215:
@@ -40,7 +73,7 @@ class NI_9215:
     def __init__(self, device_name=None, max_voltage=None, rate=None):
         if not device_name:
             # Note, this will probably not work if multiple devices exist
-            n=1024
+            n = 1024
             data1 = ctypes.create_string_buffer(n)
             DAQmxGetSysDevNames(data1, n)
             device_name = data1.value.decode('utf-8')
@@ -50,9 +83,29 @@ class NI_9215:
         self.max_voltage = max_voltage
         self.task = None
 
+    # define two different read functions, one async and one sync
+    """
+    async def read(self, seconds, rate=None, max_voltage=None, timeout=0,
+             verbose=False, oversampling_ratio=10, task_name=""):
+        rate = self._get_rate(rate, oversampling_ratio)
+        max_voltage = self._get_max_voltage(max_voltage)
+
+
+        self.task = self.FOG_DAQ_Task(
+            self, seconds, rate, oversampling_ratio, max_voltage, asynchronous)
+
+        self.queue = asyncio.Queue()
+        # self.task.StartTask()
+        # while True:
+        #     yield (await self.queue.get())
+
+
+    """
+
     def read(self, seconds, rate=None, max_voltage=None, timeout=0,
-             verbose=False, oversampling_ratio=10, task_name="", 
+             verbose=False, oversampling_ratio=10, task_name="",
              asynchronous=False):
+
         """
         Parameters
         ----------
@@ -79,9 +132,9 @@ class NI_9215:
             If set to ``True``, this function will output any assumptions made
             about the ``rate`` or ``max_voltage`` parameters.
         oversampling_ratio : int
-            If N samples of the same quantity are taken, each with 
+            If N samples of the same quantity are taken, each with
             uncorrelated errors, averaging these values will reduce the noise
-            by a factor of :math:`\sqrt{N}`. By default, the output rate of 
+            by a factor of :math:`\sqrt{N}`. By default, the output rate of
             the data returned by 'read' is 1/10 the bandwidth of the lock-in
             amplifier. We can reduce our noise to a theoretical limit by sampling
             at the lock-in amplifier bandwidth, and then downsampling via simple
@@ -106,19 +159,26 @@ class NI_9215:
         """
         rate = self._get_rate(rate, oversampling_ratio)
         max_voltage = self._get_max_voltage(max_voltage)
- 
 
         self.task = self.FOG_DAQ_Task(
             self, seconds, rate, oversampling_ratio, max_voltage, asynchronous)
 
+        # a bunch of gymnastics to be able to return two different data types
+        # basically bad practice, rewrite
         if asynchronous:
             self.queue = queue.Queue()
             self.task.StartTask()
+
             def gen(q):
                 while True:
                     yield q.get()
 
             return gen(self.queue)
+
+            # self.queue = asyncio.Queue()
+            # self.task.StartTask()
+            # while True:
+            #     yield (await self.queue.get())
 
         if not asynchronous:
             self.task.StartTask()
@@ -126,10 +186,11 @@ class NI_9215:
             self.task.StopTask()
             self.task.ClearTask()
             self.task = None
-            return self.data
+            return self.data * u.volts
 
     class FOG_DAQ_Task(Task):
-        def __init__(self, daq, seconds, rate, oversampling_ratio, max_voltage, asynchronous):
+        def __init__(self, daq, seconds, rate, oversampling_ratio, max_voltage,
+                     asynchronous):
 
             Task.__init__(self)
 
@@ -145,20 +206,20 @@ class NI_9215:
             # Setup for CfgSampClkTiming #
             ##############################
 
-            # the source terminal of the Sample Clock. 
+            # the source terminal of the Sample Clock.
             # To use the internal clock, of the device, set to Null
             source = ""
 
-            # the sampling rate in samples per second per channel. If you use 
+            # the sampling rate in samples per second per channel. If you use
             # an external source for the Sample Clock, set this value to the
             # maximum expected rate of that clock
             sampling_rate = rate * oversampling_ratio
 
-            # Specifies on which edge of the clock to acquire or generate 
+            # Specifies on which edge of the clock to acquire or generate
             # samples
             active_edge = DAQmx_Val_Rising
 
-            # Specifies whether the task acquires or generates samples 
+            # Specifies whether the task acquires or generates samples
             # continuously or if it acquires or generates a finite number of
             # samples.
             if asynchronous:
@@ -168,7 +229,7 @@ class NI_9215:
 
             # The number of samples to acquire for each channel in the task.
             # If sample mode is finite, this is the total number of samples.
-            # If sample is continuous, this is the buffer size. 
+            # If sample is continuous, this is the buffer size.
             samps_per_channel_to_acquire = sample_size
 
             #################################
@@ -178,19 +239,19 @@ class NI_9215:
             # You can specify a list or range of channels
             physical_channel = "%s/ai0" % daq.device_name
 
-            # The name(s) to assign the created virtual channel(s). 
+            # The name(s) to assign the created virtual channel(s).
             # If you do not specify a name NI-DAQmx uses the physical channel
             # name as the virtual channel name.
             name_to_assign_channel = ""
 
-            # The input terminal configuration for the channel. For the 
-            # NI9215, this defaults to differential between the coax wire and 
+            # The input terminal configuration for the channel. For the
+            # NI9215, this defaults to differential between the coax wire and
             # sheath.
             terminal_config = DAQmx_Val_Cfg_Default
 
             # The minimum and maximum values you expect to detect in `units`.
-            # The lock-in-amplifier has an output range of -10 to 10 Volts, 
-            # corresponding to max and min values at its sensitivity. 
+            # The lock-in-amplifier has an output range of -10 to 10 Volts,
+            # corresponding to max and min values at its sensitivity.
 
             min_val = -10
             max_val = 10
@@ -211,12 +272,13 @@ class NI_9215:
                     min_val, max_val, units, custom_scale_name)
 
             self.CfgSampClkTiming(
-                    source, sampling_rate, active_edge, sample_mode, 
+                    source, sampling_rate, active_edge, sample_mode,
                     sample_size)
 
             if asynchronous:
                 # Map EveryNCallback and DoneCallback into C callback functions
-                self.AutoRegisterEveryNSamplesEvent(DAQmx_Val_Acquired_Into_Buffer,sample_size,0, name='run')
+                self.AutoRegisterEveryNSamplesEvent(DAQmx_Val_Acquired_Into_Buffer,
+                                                    sample_size, 0, name='run')
                 self.AutoRegisterDoneEvent(0, name='finish')
 
         def run(self):
@@ -225,19 +287,19 @@ class NI_9215:
             ###########################
 
             # The number of samples, per channel, to read. If read_array does
-            # not contain enough space, ReadAnalogF64 returns as many samples 
+            # not contain enough space, ReadAnalogF64 returns as many samples
             # as fit in read_array
             num_samps_per_channel = len(self.raw_data)
 
             # The amount of time, in seconds, to wait for the function to read
-            # the samples. An infinite wait is specified by -1. The 
+            # the samples. An infinite wait is specified by -1. The
             # ReadAnalogF64 function returns an error if the timeout elapses
             timeout = -1
 
             # Specifies whether or not the samples are interleaved
             fill_mode = DAQmx_Val_GroupByChannel
 
-            # The array to read samples into, organized according to the 
+            # The array to read samples into, organized according to the
             # filling mode
             read_array = self.raw_data
 
@@ -251,7 +313,7 @@ class NI_9215:
             reserved = None
 
             self.ReadAnalogF64(
-                    num_samps_per_channel, timeout, fill_mode, read_array, 
+                    num_samps_per_channel, timeout, fill_mode, read_array,
                     array_size_in_samps, samples_per_channel_read, reserved)
 
             # Scale
@@ -267,8 +329,8 @@ class NI_9215:
                 self.daq.data = data
 
         def finish(self, status):
-            return 0 # The function should return an integer)
-            
+            return 0  # (The function should return an integer)
+
     def stop(self):
         """ If running in asynchronous mode, this stops the task"""
         self.task.StopTask()
@@ -280,12 +342,12 @@ class NI_9215:
         Returns:
            str: response of ``DAQmxGetDevProductType``"""
         buf = ctypes.create_string_buffer(16)
-        DAQmxGetDevProductType(self.device_name, buf, 16);
+        DAQmxGetDevProductType(self.device_name, buf, 16)
         return "".join([(c).decode() for c in buf][:-1])
 
     @property
     def tasks(self):
-        n=1024
+        n = 1024
         data1 = ctypes.create_string_buffer(n)
         DAQmxGetSysTasks(data1, n)
         return data1.value.decode('utf-8')
@@ -300,7 +362,7 @@ class NI_9215:
             raise ValueError(
                 "Frequency needs to be > 2 Hz. "
                 "You gave a rate of %f and an oversampling ratio of %f. "
-                "Try increasing the oversampling ratio" 
+                "Try increasing the oversampling ratio"
                 % (rate, oversampling_ratio))
         elif rate:
             # use the passed rate
@@ -309,7 +371,7 @@ class NI_9215:
             return self.rate
         else:
             from hardware import lia
-            rate = .1/lia.time_constant
+            rate = (.1/lia.time_constant).to('Hz').magnitude
             return max(2, rate)
 
     def _get_max_voltage(self, max_voltage):
@@ -318,8 +380,9 @@ class NI_9215:
             # used the passed max_voltage
             return max_voltage
         elif self.max_voltage:
-            return self.max_voltage
+            return self.max_voltage  # * u.volt ... not ready to implement yet
         else:
             from hardware import lia
-            return lia.sensitivity
-            
+
+            # ... not ready to implement yet
+            return lia.sensitivity.to('volt').magnitude  # * u.volt

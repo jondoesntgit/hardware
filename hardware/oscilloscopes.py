@@ -8,6 +8,7 @@ Oscilloscopes
    :synopsis: Python wrappers for oscilloscopes
 
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
+.. moduleauthor:: Anjali Thontakudi
 
 This module provides support for controlling oscilloscopes with Python.
 Oscilloscopes can be imported by
@@ -20,6 +21,36 @@ Oscilloscopes can be imported by
 import visa
 from numpy import array, arange
 import time
+from hardware import u
+import logging
+
+
+"""
+A mock oscilloscope class to use for testing
+"""
+
+
+class MockOscilloscope:
+    def __init__(self, instr_name = None):
+        if not instr_name:
+            self.name = "Oscilloscope - Agilent DSO1024A "
+        else:
+            self.name = instr_name
+
+    def identify(self):
+        return self.name
+
+    def set_timeout(self, val):
+        self.timeout = val * u.milliseconds
+
+    def stop(self):
+        print("Stopped")
+
+    def start(self):
+        print("Started")
+
+    def run(self):
+        print("Running")
 
 
 class Agilent_DSO1024A:
@@ -33,6 +64,7 @@ class Agilent_DSO1024A:
     def __init__(self, visa_search_term):
         rm = visa.ResourceManager()
         self.inst = rm.open_resource(visa_search_term)
+        self.logger = logging.getLogger(__name__ + ".Agilent DSO1024A")
 
     def identify(self):
         """
@@ -41,6 +73,7 @@ class Agilent_DSO1024A:
         """
         return self.inst.query('*IDN?')
 
+    @u.wraps(None, (None, u.milliseconds))
     def set_timeout(self, milliseconds):
         """
         Sets the instrument timeout in milliseconds
@@ -49,6 +82,7 @@ class Agilent_DSO1024A:
             milliseconds (float): The amount of time to wait before timing out
         """
         self.inst.timeout = milliseconds
+        self.logger.info("Timeout set to %f milliseconds." % milliseconds)
 
     def single(self):
         """

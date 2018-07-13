@@ -1,7 +1,7 @@
 # Python Hardware Wrappers
 
 [![Build Status](https://travis-ci.org/jondoesntgit/hardware.svg?branch=master)](https://travis-ci.org/jondoesntgit/hardware)
-[![Coverage Status](https://img.shields.io/coveralls/github/jondoesntgit/hardware.svg)](https://coveralls.io/github/jondoesntgit/hardware?branch=master)
+[![Codecov](https://img.shields.io/codecov/c/github/jondoesntgit/hardware.svg)](https://codecov.io/gh/jondoesntgit/hardware)
 
 This repository contains python wrappers that can be used to access hardware
 commonly used inside of the Digonnet lab at Stanford. For more documentation,
@@ -13,7 +13,7 @@ This changelog follows the recommendations put forth at [keepachangelong.com](ht
 ### Added
 - Gyro objects now can have their properties accessed as if they were a dictionary. For example: `fog['name']`, `fog['pitch']`.
 - Gyro objects can be autoloaded from the `__init__.py` script by setting an environment variable `DEFAULT_GYRO`, which contains the absolute path to the desired gyros JSON file.
-- Gyros objects can now be returned via the `__repr__` function in `print(fog)`. This will be handy when showing them in a `Tombstone` object. 
+- Gyros objects can now be returned via the `__repr__` function in `print(fog)`. This will be handy when showing them in a `Tombstone` object.
 
 ### Changed
 - Gyro scale factor code now uses sensitivity and pitch from either parameter arguments or JSON file values.

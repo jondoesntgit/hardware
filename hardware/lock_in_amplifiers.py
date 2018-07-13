@@ -8,6 +8,7 @@ Lock-in Amplifiers
    :synopsis: Python wrappers for lock-in amplifiers
 
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
+.. moduleauthor:: Anjali Thontakudi
 
 This module provides support for controlling lock-in amplifiers with Python.
 Lock-in amplifiers can be imported by
@@ -18,6 +19,75 @@ Lock-in amplifiers can be imported by
 """
 
 import visa
+from hardware import u
+import random
+import logging
+
+class MockLockInAmplifier:
+    """
+    This class serves as a dummy lock in amplifier, used for testing.
+
+    Parameters
+    ----------------------------------------
+        instr_name (str, optional): The name for the amplifier
+
+    Attributes
+    ----------------------------------------
+        _sensitivity_dict (dict): A shortened dictionary of the sensitivities
+                                  the amplifier can be set to
+        _time_constant_list (list): A shortened lit of possible time constants
+        name (str): The name of the amplifier
+        logger (logging): A reference to a logger that prints information
+                         statements when a value (i.e. phase) is set
+    """
+
+    def __init__(self, instr_name = None):
+        if not instr_name:
+            self.name = "Lock In Amplifier - SRS_SR844"
+        else:
+            self.name = instr_name
+
+        self._sensitivity_dict = {
+                0: {"Vrms": 100e-9, "dBm": -127},
+                1: {"Vrms": 300e-9, "dBm": -117},
+                2: {"Vrms": 1e-6, "dBm": -107},
+                3: {"Vrms": 3e-6, "dBm": -97},
+                4: {"Vrms": 10e-6, "dBm": -87},
+                5: {"Vrms": 30e-6, "dBm": -77},
+            }
+
+    # see page 115 of manual
+        self._time_constant_list = [  # query by index
+                100e-6,
+                300e-6,
+                1e-3,
+                3e-3,
+                10e-3,
+            ]
+
+        self.logger = logging.getLogger(__name__)
+
+        key = random.randint(0, len(self._time_constant_list))
+        self._time_constant = self._time_constant_list[key] * u.second
+        self._phase = random.randint(1, 361) * u.degree
+
+        key2 = random.randint(0, len(self._sensitivity_dict))
+        self._sensitivity = self._sensitivity_dict[key2] * u.volt
+
+    def identify(self):
+        return self.name
+
+    @property
+    def phase(self):
+        return self._phase
+
+    @property
+    def time_constant(self):
+        return self._time_constant
+
+    @property
+    def sensitivity(self):
+        self._sensitivity
 
 
 class SRS_SR844:
@@ -30,7 +100,7 @@ class SRS_SR844:
 
     Attributes:
         phase (float): The phase between the input and the reference signals in
-            radians.
+            degrees.
         sensitivity (float): The sensitivity of the lock-in amplifer in volts.
         time_constant (float): The time constant for the lock-in amplifier
             filter.
@@ -102,6 +172,7 @@ class SRS_SR844:
             14: {"name": "-", "set_when": "Unused"},
             15: {"name": "-", "set_when": "Unused"},
         }
+        self.logger = logging.getLogger(__name__ + ".SRS SR844")
 
     def identify(self):
         """
@@ -112,31 +183,47 @@ class SRS_SR844:
 
     @property
     def phase(self):
-        return float(self.inst.query('PHAS?')[:-1])
+        return float(self.inst.query('PHAS?')[:-1]) * u.degree
 
     @phase.setter
+    @u.wraps(None, (None, u.degree))
     def phase(self, val):
+        if(val > 180 or val < -180):
+            raise ValueError("Phase must be between -180 and 180 degrees")
         self.inst.write('PHAS %f' % val)
+        self.logger.info("Phase set to %f degrees." % val)
 
     @property
     def sensitivity(self):
         key = int(self.inst.query('SENS?'))
-        return self._sensitivity_dict[key]['Vrms']
+        return self._sensitivity_dict[key]['Vrms'] * u.volt
 
     @sensitivity.setter
+    @u.wraps(None, (None, u.volt))
     def sensitivity(self, val):
         key = [d['Vrms'] for d in self._sensitivity_dict.values()].index(val)
+        # create array of Vrms values from dictionary by iterating through values
+        # from the values we are only looking at those w [Vrms] key
+        # if find the Vrms key index, that index is the sensitivity
+        if key not in self._sensitivity_dict:
+            raise ValueError("Not a valid sensitivity")
         self.inst.write('SENS %i' % key)
+        self.logger.info("Sensitivity set to %f V." % val)
+        # raise Exception if value isn't in the array (Value Error)
 
     @property
     def time_constant(self):
         key = int(self.inst.query('OFLT?'))
-        return self._time_constant_list[key]
+        return self._time_constant_list[key] * u.second
 
     @time_constant.setter
+    @u.wraps(None, (None, u.second))
     def time_constant(self, val):
+        if val not in self._time_constant_list:
+            raise ValueError("Not a valid time constant")
         key = self._time_constant_list.index(val)
         self.inst.write('OFLT %i' % key)
+        self.logger.info("Time constant set to %f seconds." % val)
 
     @property
     def x(self):

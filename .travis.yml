@@ -1,14 +1,14 @@
 language: python
-python: 
+python:
   - "3.6"
 install:
   - pip install -v .
   - pip install -r requirements.txt
-  - pip install coveralls
+  - pip install codecov
 script:
   - coverage run --source hardware setup.py test
   - coverage report -m
-  - coveralls
+  - codecov
 after_success:
   - "cd docs && make html"
 deploy:

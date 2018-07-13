@@ -8,8 +8,9 @@ Fiber Optic Gyroscopes
       optic gyroscopes.
 
 .. moduleauthor:: Jonathan Wheeler <jamwheel@stanford.edu>
-"""
+.. moduleauthor:: Anjali Thontakudi
 
+"""
 
 
 try:
@@ -25,10 +26,42 @@ except:
 from allantools import oadev
 import time
 from numpy import floor, mean, cos, pi, zeros, nan, log10
+import numpy as np
 from pyfog import Tombstone, InsufficientSampleTimeError, InsufficientSamplingRateError
 import json
 import re
 import threading
+import asyncio
+import random
+from hardware import u, Q_
+import logging
+
+
+class MockGyro:
+    def __init__(self, instr_name = None):
+        if not instr_name:
+            self.name = "Northrop Grumman LN 200"
+        else:
+            self.name = instr_name
+
+        # data taken from
+        # https://www.northropgrumman.com/Capabilities/LN200FOG/Documents/ln200.pdf
+        self.data = {
+                     "name": self.name,
+                     "radius": 1.75 * u.inch,
+                     "diameter": 3.5 * u.inch,
+                     "pitch": 0 * u.degree,
+                    }
+
+    def identify(self):
+        return self.data["name"]
+
+    def get_item(self, key):
+        return self.data[key]
+
+    def rotate(self):
+        print("Rotating")
+
 
 class Gyro:
     """
@@ -40,7 +73,7 @@ class Gyro:
             the gyro.
 
     Examples:
-        Suppose a json file ``kvothe.json`` contains the following markup 
+        Suppose a json file ``kvothe.json`` contains the following markup
         describing a gyro
         named `Kvothe`.
 
@@ -59,7 +92,7 @@ class Gyro:
 
         From here, different tests can be run on the gyro.
 
-        >>> test1 = gyro.tombstone(hours=4)
+        >>> test1 = gyro.tombstone(hours=4) #fill tombstone w data for 4 hrs?
 
     """
     def __init__(self, filepath):
@@ -85,6 +118,8 @@ class Gyro:
             if 'radius' in self.data:
                 self.diameter = self.data['radius'] * 2
                 self.radius = self.data['radius']
+            self.logger = logging.getLogger(__name__)
+            self.logger.info("Gyro '%s' loaded.")
 
     def __repr__(self):
         return "Gyro('%s')" % self.filepath
@@ -99,7 +134,7 @@ class Gyro:
         when the gyro is in this position, it does not detect any component
         of the earth rate.
         """
-        rot.angle = 0
+        rot.angle = Q_(0, 'degrees')
 
     def autophase(self, sensitivity=0.03, velocity=1):
         """
@@ -123,12 +158,16 @@ class Gyro:
         time.sleep(1)
         lia.autophase()
 
+        # return variables to initial condition
         rot.velocity = tmp_velocity
         lia.sensitivity = tmp_sensitivity
         time.sleep(3)
         rot.angle = start_angle
 
-    def get_scale_factor(self, sensitivity=None, velocity=1, pitch=None):
+    # Waiting for https://github.com/hgrecco/pint/issues/651
+    # @u.wraps(u.degree / u.hour / u.volt, (None))
+    def get_scale_factor(self, sensitivity=None, velocity=Q_(1, 'deg/s'),
+                         pitch=None):
         """
         A partial
         python port of Jacob Chamoun's matlab script to grab the scale factor
@@ -148,9 +187,12 @@ class Gyro:
 
             :math:`\Omega[t] = S \cdot V[t]`
         """
+        self.logger.info('Performing scale factor acquisition.')
 
         if not sensitivity:
-            sensitivity = self.data.get('sensitivity', .3)
+            sensitivity = self.data.get('sensitivity', .3) * u.volts
+        sensitivity = sensitivity.to('volts')
+
         # set sensitivity and store current sensitivity
         cal_sensitivity = lia.sensitivity
         lia.sensitivity = sensitivity
@@ -158,24 +200,27 @@ class Gyro:
         # set the integration time and filter slope and store the current
         # integration
         cal_integration_time = lia.time_constant
-        lia.time_constant = 0.01
-        
+        lia.time_constant = Q_(0.01, 'seconds')
+
         # set the rotation speed and store the current
-        # rotation speed
+        # keep rotation speed
+        velocity = velocity.to('deg/s')
         cal_velocity = rot.velocity
         rot.velocity = velocity
 
         # set the acquisition rate
-        cal_acquisition_rate = floor(1/cal_integration_time) # should this be 1/(3*integration time)??
+        # should this be 1/(3*integration time)??
+        cal_acquisition_rate = floor(
+            1/cal_integration_time.to('seconds').magnitude)
 
         # start acquisition and store the calibrated data
-        rot.ccw(velocity * 4.5, background=True)
+        rot.ccw(velocity * 4.5 * u.seconds, background=True)
         time.sleep(1)
         ccw_data = daq.read(seconds=3, rate=cal_acquisition_rate,
                             verbose=False)
         time.sleep(5)
 
-        rot.cw(velocity * 4.5, background=True)
+        rot.cw(velocity * 4.5 * u.seconds, background=True)
         time.sleep(1)
         cw_data = daq.read(seconds=3, rate=cal_acquisition_rate, verbose=False)
         time.sleep(5)
@@ -187,14 +232,23 @@ class Gyro:
         if not pitch:
             pitch = float(self.data.get('pitch', 0))
 
-        volt_seconds_per_degree = (mean(ccw_data) - mean(cw_data))/2\
-            / cos(pitch * pi / 180) / velocity
-        volt_hours_per_degree = volt_seconds_per_degree / 3600
-        degrees_per_hour_per_volt = 1 / volt_hours_per_degree
-        return degrees_per_hour_per_volt
+        average_voltage = (mean(ccw_data) - mean(cw_data))/2
+        assert average_voltage.units == u.volt
+        assert velocity.units == u.degree / u.second
+        scale_factor = (
+            velocity / average_voltage / cos(pitch * pi / 180)
+            ).to('deg/hour/V')
+
+        self.logger.info(
+            "Completed scale factor acquisition. "
+            "Scale factor = %f deg/h/V" % scale_factor.magnitude
+            )
+
+        return scale_factor
 
     def tombstone(self, seconds=None, minutes=None, hours=None, rate=None,
-                  autophase=False, autohome=True, scale_factor=0, sensitivity=None,max_duration=None):
+                  autophase=False, autohome=True, scale_factor=0,
+                  sensitivity=None, max_duration=None):
         """
         Performs a tombstone test of the gyro. The gyro records a time series
         of rotation data when no rotation is applied to it. This data can be
@@ -212,8 +266,8 @@ class Gyro:
                 between lock-in amplifier voltage and rotation rate in units
                 of deg/h/Volt. If this is not set, the gyro will run the
                 :func:`hardware.gyros.get_scale_factor` routine.
-			Sensitivity (float): The sensitivity of the LIA for the scale
-				calibration and taking data. Put in [V]
+            Sensitivity (float): The sensitivity of the LIA for the scale
+                calibration and taking data. Put in [V]
 
         Returns:
             Tombstone: A :class:`pyfog.tombstone.Tombstone` object
@@ -234,11 +288,16 @@ class Gyro:
         if autophase:
             self.autophase()
 
+        if type(scale_factor) == np.float64:
+            scale_factor *= u.deg / u.hour / u.volt
+
         if scale_factor == "auto":
             scale_factor = self.scale_factor
 
         elif not scale_factor:
-            scale_factor = self.get_scale_factor(sensitivity = sensitivity)
+            scale_factor = self.get_scale_factor(sensitivity=sensitivity)
+
+        scale_factor = scale_factor.to('deg/hour/volt')
 
         start = time.time()
 
@@ -247,7 +306,9 @@ class Gyro:
             data = daq.read(duration, rate)
             if not rate:
                 rate = len(data)/duration
-            return Tombstone(data, rate, start=start, scale_factor=scale_factor)
+            # TODO: Tombstone should take unit data... I think...
+            return Tombstone(data.magnitude, rate, start=start,
+                             scale_factor=scale_factor.magnitude)
 
         # Assume asynchronous
         if not max_duration:
@@ -259,10 +320,14 @@ class Gyro:
         initial_values = zeros(max_duration * rate)
         initial_values.fill(nan)
 
-        tmb = Tombstone(initial_values, rate=rate, start=time.time(), scale_factor=scale_factor)
-        
-        tmb._data_thread = StoppableThread(target=self.detector, args=(tmb,), kwargs={"rate": rate, "max_duration": max_duration})
-        tmb._adev_check_thread = StoppableThread(target=self.adev_checker, args=(tmb,))
+        tmb = Tombstone(initial_values.magnitude, rate=rate, start=time.time(),
+                        scale_factor=scale_factor.magnitude)
+
+        tmb._data_thread = StoppableThread(
+            target=self.detector, args=(tmb,),
+            kwargs={"rate": rate, "max_duration": max_duration})
+        tmb._adev_check_thread = StoppableThread(
+            target=self.adev_checker, args=(tmb,))
         tmb._data_thread.start()
         tmb._adev_check_thread.start()
         return tmb
@@ -294,26 +359,31 @@ class Gyro:
 
         data = daq.read(seconds, rate=rate)
         if not rate:
+            # duration isn't defined in this method, even in the original code
             rate = len(data/duration)
         _, dev, _, _ = oadev(data*scale_factor, rate=rate, data_type='freq',
                              taus=[1])
         return dev[0]/60
 
     def detector(self, tmb, rate, max_duration):
+
         data = daq.read(1, rate, asynchronous=True)
-        i=0
+        i = 0
         while i < rate*max_duration:
             data_to_add = next(data)
             next_i = i + len(data_to_add)
-            if next_i > len(tmb): break
+
+            if next_i > len(tmb):
+                break
+
             tmb.iloc[i:next_i] = data_to_add
-            i = next_i 
+            i = next_i
             if tmb._data_thread.stopped():
                 return
         self.notify('Reached max duration')
         tmb.stop()
 
-        
+
     def adev_checker(self, tmb, period=5, threshold=5):
         """Check every {period} seconds until ADev max climbs {threshold} dB above ADev min"""
         while True:
@@ -333,10 +403,11 @@ class Gyro:
                 break
         tmb.stop()
 
-        
+
     def notify(self, msg):
-        """Some function we can use to notify the user that a thread has finished"""
+        """Some function we can use to notify the user that a thread has finished."""
         print(msg)
+
 
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check
